@@ -1,0 +1,3 @@
+[submodule "3rd/lpeglabel"]
+	path = 3rd/lpeglabel
+	url = https://github.com/sqmedeiros/lpeglabel
