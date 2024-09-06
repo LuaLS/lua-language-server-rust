@@ -27,6 +27,9 @@ fn main() -> LuaResult<()> {
     bee::lua_thread::register_lua_channel(&lua);
     let bee_thread_loader = lua.create_function(|lua: &Lua, ()| Ok(bee::lua_thread::bee_thread(lua)))?;
     add_preload_module(&lua, "bee.thread", bee_thread_loader)?;
+    // bee.time
+    let bee_time_loader = lua.create_function(|lua: &Lua, ()| Ok(bee::lua_time::bee_time(lua)))?;
+    add_preload_module(&lua, "bee.time", bee_time_loader)?;
 
     add_package_path(&lua, "resources/?.lua;resources/?/init.lua")?;
 

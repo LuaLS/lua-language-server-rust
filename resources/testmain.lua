@@ -12,3 +12,7 @@ hello:push("world", "yes", "no", 1, 2, 3)
 
 local a, b, c, d, e, f = hello:pop()
 print(a, b, c, d, e, f)
+
+local time = require "bee.time"
+print(time.time())
+print(time.monotonic())

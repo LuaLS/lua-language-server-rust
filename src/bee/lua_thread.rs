@@ -1,13 +1,12 @@
 use lazy_static::lazy_static;
-use mlua::ffi::lua_pushboolean;
 use mlua::prelude::LuaResult;
-use mlua::{ffi, lua_State, prelude::*, Lua, MetaMethod, Table, UserData, UserDataMethods};
+use mlua::{lua_State, prelude::*, Lua, ffi, UserData, UserDataMethods};
 use std::collections::{HashMap, VecDeque};
 use std::ffi::{c_void, CStr};
 use std::os::raw::c_int;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
+use std::thread;
 use std::time::Duration;
-use std::{thread, vec};
 
 #[derive(Clone, Debug)]
 pub struct LuaChannel {
@@ -75,16 +74,16 @@ impl UserData for LuaChannel {}
 
 pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
     lua.register_userdata_type::<LuaChannel>(|methods: _| unsafe {
-        unsafe extern "C-unwind" fn lua_channel_push(lua_State: *mut lua_State) -> i32 {
-            let top = ffi::lua_gettop(lua_State);
+        unsafe extern "C-unwind" fn lua_channel_push(lua_state: *mut lua_State) -> i32 {
+            let top = ffi::lua_gettop(lua_state);
             if top < 2 {
                 return 0;
             }
 
             let channel_name = {
-                let value_value = ffi::lua_type(lua_State, 1);
+                let value_value = ffi::lua_type(lua_state, 1);
                 if value_value == ffi::LUA_TSTRING {
-                    let value = ffi::lua_tostring(lua_State, 1);
+                    let value = ffi::lua_tostring(lua_state, 1);
                     let c_str = CStr::from_ptr(value);
                     c_str.to_str().unwrap()
                 } else {
@@ -92,7 +91,7 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
                 }
             };
 
-            let buffer_id = seri_pack(lua_State, 1, std::ptr::null_mut());
+            let buffer_id = seri_pack(lua_state, 1, std::ptr::null_mut());
             luaChannelMgr
                 .lock()
                 .unwrap()
@@ -109,16 +108,16 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
             },
         );
 
-        unsafe extern "C-unwind" fn lua_channel_pop(lua_State: *mut lua_State) -> i32 {
-            let top = ffi::lua_gettop(lua_State);
+        unsafe extern "C-unwind" fn lua_channel_pop(lua_state: *mut lua_State) -> i32 {
+            let top = ffi::lua_gettop(lua_state);
             if top < 1 {
                 return 0;
             }
 
             let channel_name = {
-                let value_value = ffi::lua_type(lua_State, 1);
+                let value_value = ffi::lua_type(lua_state, 1);
                 if value_value == ffi::LUA_TSTRING {
-                    let value = ffi::lua_tostring(lua_State, 1);
+                    let value = ffi::lua_tostring(lua_state, 1);
                     let c_str = CStr::from_ptr(value);
                     c_str.to_str().unwrap()
                 } else {
@@ -127,11 +126,11 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
             };
 
             if let Some(channel_data) = luaChannelMgr.lock().unwrap().pop(&channel_name) {
-                ffi::lua_pushboolean(lua_State, 1);
-                let count = seri_unpackptr(lua_State, channel_data as *mut c_void);
+                ffi::lua_pushboolean(lua_state, 1);
+                let count = seri_unpackptr(lua_state, channel_data as *mut c_void);
                 1 + count
             } else {
-                ffi::lua_pushboolean(lua_State, 0);
+                ffi::lua_pushboolean(lua_state, 0);
                 1
             }
         }
@@ -143,16 +142,16 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
             Ok(returns)
         });
 
-        unsafe extern "C-unwind" fn lua_channel_bpop(lua_State: *mut lua_State) -> i32 {
-            let top = ffi::lua_gettop(lua_State);
+        unsafe extern "C-unwind" fn lua_channel_bpop(lua_state: *mut lua_State) -> i32 {
+            let top = ffi::lua_gettop(lua_state);
             if top < 1 {
                 return 0;
             }
 
             let channel_name = {
-                let value_value = ffi::lua_type(lua_State, 1);
+                let value_value = ffi::lua_type(lua_state, 1);
                 if value_value == ffi::LUA_TSTRING {
-                    let value = ffi::lua_tostring(lua_State, 1);
+                    let value = ffi::lua_tostring(lua_state, 1);
                     let c_str = CStr::from_ptr(value);
                     c_str.to_str().unwrap()
                 } else {
@@ -161,7 +160,7 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
             };
 
             if let Some(channel_data) = luaChannelMgr.lock().unwrap().pop(&channel_name) {
-                let count = seri_unpackptr(lua_State, channel_data as *mut c_void);
+                let count = seri_unpackptr(lua_state, channel_data as *mut c_void);
                 count
             } else {
                 0
