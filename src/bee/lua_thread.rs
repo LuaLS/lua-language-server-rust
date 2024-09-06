@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use mlua::ffi::lua_pushboolean;
 use mlua::prelude::LuaResult;
 use mlua::{ffi, lua_State, prelude::*, Lua, MetaMethod, Table, UserData, UserDataMethods};
 use std::collections::{HashMap, VecDeque};
@@ -50,6 +51,14 @@ impl LuaChannelMgr {
             self.channel_data.insert(name.to_string(), queue);
         }
     }
+
+    pub fn pop(&mut self, name: &str) -> Option<i64> {
+        if let Some(queue) = self.channel_data.get_mut(name) {
+            queue.pop_front()
+        } else {
+            None
+        }
+    }
 }
 
 lazy_static! {
@@ -68,20 +77,26 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
     lua.register_userdata_type::<LuaChannel>(|methods: _| unsafe {
         unsafe extern "C-unwind" fn lua_channel_push(lua_State: *mut lua_State) -> i32 {
             let top = ffi::lua_gettop(lua_State);
-            if top < 2 { return 0; }
+            if top < 2 {
+                return 0;
+            }
 
             let channel_name = {
                 let value_value = ffi::lua_type(lua_State, 1);
                 if value_value == ffi::LUA_TSTRING {
                     let value = ffi::lua_tostring(lua_State, 1);
                     let c_str = CStr::from_ptr(value);
-                    c_str.to_str().unwrap();
+                    c_str.to_str().unwrap()
+                } else {
+                    ""
                 }
-                ""
             };
 
             let buffer_id = seri_pack(lua_State, 1, std::ptr::null_mut());
-            luaChannelMgr.lock().unwrap().push(&channel_name, buffer_id as i64);
+            luaChannelMgr
+                .lock()
+                .unwrap()
+                .push(&channel_name, buffer_id as i64);
             0
         }
         let lua_c_channel_push = unsafe { lua.create_c_function(lua_channel_push).unwrap() };
@@ -89,9 +104,76 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
             "push",
             move |_, this, args: mlua::MultiValue| -> LuaResult<()> {
                 let name = this.name.clone();
-                Ok(lua_c_channel_push.call::<_, ()>((name, args)))
+                lua_c_channel_push.call::<_, ()>((name, args))?;
+                Ok(())
             },
         );
+
+        unsafe extern "C-unwind" fn lua_channel_pop(lua_State: *mut lua_State) -> i32 {
+            let top = ffi::lua_gettop(lua_State);
+            if top < 1 {
+                return 0;
+            }
+
+            let channel_name = {
+                let value_value = ffi::lua_type(lua_State, 1);
+                if value_value == ffi::LUA_TSTRING {
+                    let value = ffi::lua_tostring(lua_State, 1);
+                    let c_str = CStr::from_ptr(value);
+                    c_str.to_str().unwrap()
+                } else {
+                    ""
+                }
+            };
+
+            if let Some(channel_data) = luaChannelMgr.lock().unwrap().pop(&channel_name) {
+                ffi::lua_pushboolean(lua_State, 1);
+                let count = seri_unpackptr(lua_State, channel_data as *mut c_void);
+                1 + count
+            } else {
+                ffi::lua_pushboolean(lua_State, 0);
+                1
+            }
+        }
+
+        let lua_c_channel_pop = unsafe { lua.create_c_function(lua_channel_pop).unwrap() };
+        methods.add_method("pop", move |_, this, ()| -> LuaResult<mlua::MultiValue> {
+            let name = this.name.clone();
+            let returns = lua_c_channel_pop.call::<_, mlua::MultiValue>(name)?;
+            Ok(returns)
+        });
+
+        unsafe extern "C-unwind" fn lua_channel_bpop(lua_State: *mut lua_State) -> i32 {
+            let top = ffi::lua_gettop(lua_State);
+            if top < 1 {
+                return 0;
+            }
+
+            let channel_name = {
+                let value_value = ffi::lua_type(lua_State, 1);
+                if value_value == ffi::LUA_TSTRING {
+                    let value = ffi::lua_tostring(lua_State, 1);
+                    let c_str = CStr::from_ptr(value);
+                    c_str.to_str().unwrap()
+                } else {
+                    ""
+                }
+            };
+
+            if let Some(channel_data) = luaChannelMgr.lock().unwrap().pop(&channel_name) {
+                let count = seri_unpackptr(lua_State, channel_data as *mut c_void);
+                count
+            } else {
+                0
+            }
+        }
+
+        let lua_c_channel_bpop = unsafe { lua.create_c_function(lua_channel_bpop).unwrap() };
+        methods.add_method("bpop", move |_, this, ()| -> LuaResult<mlua::MultiValue> {
+            let name = this.name.clone();
+            let returns = lua_c_channel_bpop.call::<_, mlua::MultiValue>(name)?;
+            Ok(returns)
+        });
     });
 
     // methods.add_method("pop", |_, this, ()| Ok(this.blocked_pop()));
