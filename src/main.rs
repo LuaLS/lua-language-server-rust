@@ -30,6 +30,9 @@ fn main() -> LuaResult<()> {
     // bee.time
     let bee_time_loader = lua.create_function(|lua: &Lua, ()| Ok(bee::lua_time::bee_time(lua)))?;
     add_preload_module(&lua, "bee.time", bee_time_loader)?;
+    // bee.windows
+    let bee_windows_loader = lua.create_function(|lua: &Lua, ()| Ok(bee::lua_windows::bee_windows(lua)))?;
+    add_preload_module(&lua, "bee.windows", bee_windows_loader)?;
 
     add_package_path(&lua, "resources/?.lua;resources/?/init.lua")?;
 

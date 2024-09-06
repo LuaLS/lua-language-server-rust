@@ -175,10 +175,6 @@ pub fn register_lua_channel<'lua>(lua: &'lua Lua) {
         });
     });
 
-    // methods.add_method("pop", |_, this, ()| Ok(this.blocked_pop()));
-    // methods.add_method("bpop", |_, this, timeout: Duration| {
-    //     Ok(this.timed_pop(timeout))
-    // });
 }
 
 fn bee_thread_sleep(_: &Lua, time: u64) -> LuaResult<()> {

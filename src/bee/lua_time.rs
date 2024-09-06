@@ -19,6 +19,6 @@ fn bee_time_monotonic(_: &Lua, _: ()) -> LuaResult<i64> {
 pub fn bee_time(lua: &Lua) -> LuaResult<LuaTable> {
     let time = lua.create_table()?;
     time.set("time", lua.create_function(bee_time_time)?)?;
-    time.set("monotonic", lua.create_function(bee_time_time)?)?;
+    time.set("monotonic", lua.create_function(bee_time_monotonic)?)?;
     Ok(time)
 }

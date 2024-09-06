@@ -16,3 +16,9 @@ print(a, b, c, d, e, f)
 local time = require "bee.time"
 print(time.time())
 print(time.monotonic())
+
+local windows = require "bee.windows"
+for k, v in pairs(windows) do
+    print(k, v)
+end
+-- windows:filemode(io.stdin, 'b')
