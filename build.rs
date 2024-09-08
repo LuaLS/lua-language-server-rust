@@ -4,6 +4,7 @@ fn main() {
     build_lua();
     build_lua_seri();
     build_lpeglabel();
+    cfg!(windows).then(|| build_setfilemode());
 }
 
 fn build_lua() {
@@ -63,4 +64,23 @@ fn build_lpeglabel() {
                 }),
         )
         .compile("lpeglabel");
+}
+
+fn build_setfilemode() {
+    cc::Build::new()
+        .include("3rd/setfilemode")
+        .files(
+            std::fs::read_dir("3rd/setfilemode")
+                .unwrap()
+                .filter_map(|entry| {
+                    let entry = entry.unwrap();
+                    let path = entry.path();
+                    if path.extension()?.to_str()? == "c" {
+                        Some(path)
+                    } else {
+                        None
+                    }
+                }),
+        )
+        .compile("setfilemode");
 }

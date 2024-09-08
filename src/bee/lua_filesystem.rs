@@ -145,7 +145,7 @@ impl UserData for LuaFilePath {
 }
 
 impl FromLua for LuaFilePath {
-    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
+    fn from_lua(value: mlua::Value, _: &mlua::Lua) -> mlua::Result<Self> {
         match value {
             mlua::Value::UserData(ud) => Ok(ud.borrow::<LuaFilePath>()?.clone()),
             mlua::Value::String(s) => Ok(LuaFilePath::new(s.to_str()?.to_string())),
@@ -163,6 +163,7 @@ fn path_constructor(_: &Lua, path: String) -> LuaResult<LuaFilePath> {
 }
 
 fn status(_: &Lua, path: String) -> LuaResult<()> {
+    let _ = path;
     // Implementation for status function
     Ok(())
 }
@@ -271,10 +272,11 @@ fn last_write_time(_: &Lua, path: String) -> LuaResult<u64> {
 }
 
 fn permissions(_: &Lua, path: String) -> LuaResult<u32> {
+    let _ = path;
     Ok(0u32)
 }
 
-fn create_symlink(lua: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
+fn create_symlink(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
     #[cfg(unix)]
     {
         symlink(&source, &destination)?;
@@ -287,8 +289,14 @@ fn create_symlink(lua: &Lua, (source, destination): (String, String)) -> LuaResu
 }
 
 fn create_directory_symlink(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
-    // Ok(std::os::unix::fs::symlink(&source, &destination)
-    //     .map_err(|e| mlua::Error::ExternalError(Box::new(e)))?)
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&source, &destination)?;
+    }
+    #[cfg(windows)]
+    {
+        std::os::windows::fs::symlink_dir(&source, &destination)?;
+    }
     Ok(())
 }
 

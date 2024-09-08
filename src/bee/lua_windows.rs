@@ -1,10 +1,25 @@
 use std::borrow::Cow;
-use std::fs::File;
 use std::io;
 
 use encoding_rs::WINDOWS_1252;
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
+
+#[cfg(windows)]
+mod windows {
+    use std::ffi::c_void;
+
+    extern "C" {
+        fn setfilebinary() -> c_void;
+    }
+
+    pub fn set_stdio_to_binary() -> std::io::Result<()> {
+        unsafe {
+            setfilebinary();
+        }
+        Ok(())
+    }
+}
 
 fn bee_windows_u2a(_: &Lua, text: String) -> LuaResult<String> {
     // Convert the input Unicode string to bytes
@@ -41,23 +56,9 @@ fn bee_windows_a2u(_: &Lua, text: String) -> LuaResult<String> {
 }
 
 fn set_stdio_to_binary() -> io::Result<()> {
-    unsafe {
-        // 获取标准输入输出的文件描述符
-        let stdin = File::open("CONIN$")?;
-        let stdout = File::create("CONOUT$")?;
-
-        // // 将标准输入输出设置为二进制模式
-        // let stdin_handle = stdin.as_raw_handle();
-        // let stdout_handle = stdout.as_raw_handle();
-
-        // let stdin_file = File::from_raw_handle(stdin_handle);
-        // let stdout_file = File::from_raw_handle(stdout_handle);
-
-        // 设置标准输入输出为二进制模式
-        // stdin_file.set_len(0)?;
-        // stdout_file.set_len(0)?;
+   if cfg!(windows) {
+        windows::set_stdio_to_binary()?;
     }
-
     Ok(())
 }
 

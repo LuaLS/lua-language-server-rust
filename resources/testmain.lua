@@ -21,4 +21,4 @@ local windows = require "bee.windows"
 for k, v in pairs(windows) do
     print(k, v)
 end
--- windows:filemode(io.stdin, 'b')
+windows.filemode(io.stdin, 'b')
