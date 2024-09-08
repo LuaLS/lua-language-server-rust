@@ -1,43 +1,11 @@
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
-
-struct LuaSelect {
-}
-
-impl LuaSelect {
-    fn new() -> LuaSelect {
-        LuaSelect {}
-    }
-
-    fn wait() -> LuaResult<()> {
-        // Implementation for wait function
-        Ok(())
-    }
-
-    fn close() -> LuaResult<()> {
-        // Implementation for close function
-        Ok(())
-    }
-
-    fn event_add() -> LuaResult<()> {
-        // Implementation for event_add function
-        Ok(())
-    }
-
-    fn event_mod() -> LuaResult<()> {
-        // Implementation for event_mod function
-        Ok(())
-    }
-
-    fn event_del() -> LuaResult<()> {
-        // Implementation for event_del function
-        Ok(())
-    }
-}
+use super::socket::lua_select::LuaSelect;
 
 
-fn bee_select_create(_: &Lua, _: ()) -> LuaResult<()> {
-    Ok(())
+
+fn bee_select_create(_: &Lua, _: ()) -> LuaResult<LuaSelect> {
+    Ok(LuaSelect::new())
 }
 
 pub fn bee_select(lua: &Lua) -> LuaResult<LuaTable> {

@@ -22,3 +22,25 @@ for k, v in pairs(windows) do
     print(k, v)
 end
 windows.filemode(io.stdin, 'b')
+
+local socket = require "bee.socket"
+local select = require "bee.select"
+local selector = select.create()
+local co = coroutine.create(function()
+    print(socket, select)
+    local fd = socket.create("tcp")
+    fd:bind("127.0.0.1", 9988)
+    print("bind complete")
+    fd:listen()
+
+    selector:add(fd, 1, function()
+        local cfd = fd:accept()
+        print("accept", cfd)
+    end)
+end)
+
+ 
+print(coroutine.resume(co))
+print(coroutine.resume(co))
+print(coroutine.resume(co))
+print(coroutine.resume(co))

@@ -1,21 +1,16 @@
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
-
-struct LuaSocekt {
-    protocol: String,
-}
-
-impl LuaSocekt {
-    fn new(protocol: String) -> LuaSocekt {
-        LuaSocekt { protocol }
-    }
-}
-
-impl LuaUserData for LuaSocekt {}
+use super::socket::lua_socket::{LuaSocket, SocketType};
 
 
-fn bee_socket_create(_: &Lua, protocol: String) -> LuaResult<LuaSocekt> {
-    Ok(LuaSocekt::new(protocol))
+fn bee_socket_create(_: &Lua, protocol: String) -> LuaResult<LuaSocket> {
+    let socket = match protocol.as_str() {
+        "tcp" => LuaSocket::new(SocketType::Tcp),
+        "unix" =>  LuaSocket::new(SocketType::Unix),
+        _ => return Err(LuaError::external("Invalid protocol")),
+    };
+
+    Ok(socket)
 }
 
 pub fn bee_socket(lua: &Lua) -> LuaResult<LuaTable> {

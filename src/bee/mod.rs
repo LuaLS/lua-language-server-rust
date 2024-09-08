@@ -6,3 +6,4 @@ pub mod lua_windows;
 pub mod lua_subprocess;
 pub mod lua_socket;
 pub mod lua_select;
+pub mod socket;
