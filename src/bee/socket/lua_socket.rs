@@ -47,18 +47,18 @@ impl LuaSocket {
     fn close(&mut self) -> LuaResult<()> {
         match self.socket_stream.borrow_mut() {
             SocketStream::Tcp(stream) => {
-                drop(stream);
+                let _ = stream;
             }
             SocketStream::TcpListener(stream) => {
-                drop(stream);
+                let _ = stream;
             }
             #[cfg(unix)]
             SocketStream::Unix(stream) => {
-                drop(stream);
+                let _ = stream;
             }
             #[cfg(unix)]
             SocketStream::UnixListener(stream) => {
-                drop(stream);
+                let _ = stream;
             }
             SocketStream::None => {}
         }
@@ -138,6 +138,15 @@ impl LuaSocket {
     }
 
     async fn accept(&mut self) -> LuaResult<LuaSocket> {
+        if let Some(socket_data) = &mut self.socket_data {
+            if socket_data.len() > 0 {
+                let socket = socket_data.remove(0);
+                if let SocketStreamData::Socket(socket) = socket {
+                    return Ok(socket);
+                }
+            }
+        }
+
         match self.socket_stream.borrow_mut() {
             SocketStream::TcpListener(listener) => {
                 let (stream, _) = listener.accept().await?;
@@ -230,20 +239,20 @@ impl LuaSocket {
             SocketStream::Unix(stream) => match stream.writable().await {
                 Ok(_) => Ok(true),
                 Err(_) => Ok(false),
-            }
+            },
             _ => Ok(false),
         }
     }
 }
 
 impl LuaUserData for LuaSocket {
-    fn add_methods<'a, M: LuaUserDataMethods<'a, Self>>(methods: &mut M) {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("close", |_, this, ()| this.close());
-        methods.add_async_method_mut("send", |_, this, data: String| async move {
+        methods.add_async_method_mut("send", |_, mut this, data: String| async move {
             this.send(data).await
         });
-        methods.add_async_method_mut("recv", |_, this, ()| async move { this.recv().await });
-        methods.add_async_method_mut("bind", |_, this, args: mlua::MultiValue| async move {
+        methods.add_async_method_mut("recv", |_, mut this, ()| async move { this.recv().await });
+        methods.add_async_method_mut("bind", |_, mut this, args: mlua::MultiValue| async move {
             let addr = args.get(1).unwrap().to_string()?;
             let port = match args.get(2) {
                 Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
@@ -253,15 +262,21 @@ impl LuaUserData for LuaSocket {
             this.bind(addr, port).await
         });
         methods.add_method_mut("listen", |_, this, ()| this.listen());
-        methods.add_async_method_mut("connect", |_, this, args: mlua::MultiValue| async move {
-            let addr = args.get(1).unwrap().to_string()?;
-            let port = match args.get(2) {
-                Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
-                _ => 0,
-            };
-            this.connect(addr, port).await
-        });
-        methods.add_async_method_mut("accept", |_, this, ()| async move { this.accept().await });
+        methods.add_async_method_mut(
+            "connect",
+            |_, mut this, args: mlua::MultiValue| async move {
+                let addr = args.get(1).unwrap().to_string()?;
+                let port = match args.get(2) {
+                    Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
+                    _ => 0,
+                };
+                this.connect(addr, port).await
+            },
+        );
+        methods.add_async_method_mut(
+            "accept",
+            |_, mut this, ()| async move { this.accept().await },
+        );
         methods.add_method("status", |_, this, ()| this.status());
     }
 }

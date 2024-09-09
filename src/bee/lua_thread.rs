@@ -75,15 +75,15 @@ lazy_static! {
 }
 
 impl UserData for LuaChannel {
-    fn add_methods<'a, M: LuaUserDataMethods<'a, Self>>(methods: &mut M) {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_meta_method(mlua::MetaMethod::ToString, |_, this, ()| {
             Ok(this.mt_string())
         });
 
         methods.add_async_method("push", |lua, this, args: mlua::MultiValue| async move {
             let id = this.id;
-            let lua_seri_pack = lua.globals().get::<_, LuaFunction>("lua_seri_pack")?;
-            let ptr = lua_seri_pack.call::<_, i64>(args).unwrap();
+            let lua_seri_pack = lua.globals().get::<LuaFunction>("lua_seri_pack")?;
+            let ptr = lua_seri_pack.call::<i64>(args).unwrap();
             luaChannelMgr.lock().unwrap().push(id, ptr).await.unwrap();
             Ok(())
         });
@@ -92,8 +92,8 @@ impl UserData for LuaChannel {
             let id = this.id;
             let data = luaChannelMgr.lock().unwrap().pop(id).await;
             if let Some(data) = data {
-                let lua_seri_unpack = lua.globals().get::<_, LuaFunction>("lua_seri_unpack")?;
-                let mut returns = lua_seri_unpack.call::<_, mlua::MultiValue>(data).unwrap();
+                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
                 returns.insert(0, mlua::Value::Boolean(true));
                 Ok(returns)
             } else {
@@ -107,8 +107,8 @@ impl UserData for LuaChannel {
             let id = this.id;
             let data = luaChannelMgr.lock().unwrap().pop(id).await;
             if let Some(data) = data {
-                let lua_seri_unpack = lua.globals().get::<_, LuaFunction>("lua_seri_unpack")?;
-                let returns = lua_seri_unpack.call::<_, mlua::MultiValue>(data).unwrap();
+                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
                 Ok(returns)
             } else {
                 Err(mlua::Error::RuntimeError("Channel is closed".to_string()))
@@ -117,7 +117,7 @@ impl UserData for LuaChannel {
     }
 }
 
-async fn bee_thread_sleep(_: &Lua, time: u64) -> LuaResult<()> {
+async fn bee_thread_sleep(_: Lua, time: u64) -> LuaResult<()> {
     tokio::time::sleep(Duration::from_millis(time)).await;
     Ok(())
 }

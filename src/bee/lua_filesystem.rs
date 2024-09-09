@@ -105,7 +105,7 @@ impl LuaFilePath {
 }
 
 impl UserData for LuaFilePath {
-    fn add_methods<'a, M: UserDataMethods<'a, Self>>(methods: &mut M) {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("string", |_, this, ()| Ok(this.path.clone()));
         methods.add_method("filename", |_, this, ()| Ok(this.filename()));
         methods.add_method("parent_path", |_, this, ()| Ok(this.parent_path()));

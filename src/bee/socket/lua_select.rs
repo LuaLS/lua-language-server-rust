@@ -105,8 +105,8 @@ impl LuaSelect {
 }
 
 impl LuaUserData for LuaSelect {
-    fn add_methods<'a, M: LuaUserDataMethods<'a, Self>>(methods: &mut M) {
-        methods.add_async_method_mut("wait", |lua, this, time: u64| async move {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_async_method_mut("wait", |lua,mut this, time: u64| async move {
             let results: Vec<(LuaFunction, i32)> = this.wait(time).await.unwrap();
             // why this code is not working?
             // let iter = Rc::new(RefCell::new(results.into_iter()));
@@ -120,7 +120,7 @@ impl LuaUserData for LuaSelect {
             //     }
             // })?;
             // Ok(iter_func)
-            let next_func = lua.globals().get::<_, LuaFunction>("next").unwrap();
+            let next_func = lua.globals().get::<LuaFunction>("next").unwrap();
             let table = lua.create_table().unwrap();
             for (callback, flag) in results {
                 table.set(callback, flag).unwrap();

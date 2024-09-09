@@ -59,22 +59,23 @@ async fn main() -> LuaResult<()> {
     )?;
 
     build_args(&lua);
-    lua.load(path::Path::new("resources/testmain.lua")).exec()?;
+    let main = lua.load(path::Path::new("resources/testmain.lua"));
+    main.call_async(()).await?;
     Ok(())
 }
 
 fn add_preload_module(lua: &Lua, name: &str, loader: LuaFunction) -> LuaResult<()> {
     let preload = lua
         .globals()
-        .get::<_, LuaTable>("package")?
-        .get::<_, LuaTable>("preload")?;
+        .get::<LuaTable>("package")?
+        .get::<LuaTable>("preload")?;
     preload.set(name, loader)?;
     Ok(())
 }
 
 fn add_package_path(lua: &Lua, path: &str) -> LuaResult<()> {
-    let package = lua.globals().get::<_, LuaTable>("package")?;
-    let package_path = package.get::<_, String>("path")?;
+    let package = lua.globals().get::<LuaTable>("package")?;
+    let package_path = package.get::<String>("path")?;
     package.set("path", format!("{};{}", path, package_path))?;
     Ok(())
 }
