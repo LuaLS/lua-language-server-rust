@@ -189,8 +189,8 @@ fn create_directory(_: &Lua, path: String) -> LuaResult<()> {
     Ok(())
 }
 
-fn create_directories(_: &Lua, path: String) -> LuaResult<()> {
-    std::fs::create_dir_all(&path)?;
+fn create_directories(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
+    std::fs::create_dir_all(&path.path)?;
     Ok(())
 }
 

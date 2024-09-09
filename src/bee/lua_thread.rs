@@ -127,15 +127,17 @@ fn bee_thread_newchannel(_: &Lua, name: String) -> LuaResult<()> {
     Ok(())
 }
 
-fn bee_thread_channel(_: &Lua, name: String) -> LuaResult<LuaChannel> {
-    if let Some(channel) = luaChannelMgr.lock().unwrap().get_channel(&name) {
+fn bee_thread_channel(lua: &Lua, name: &str) -> LuaResult<LuaChannel> {
+    if let Some(channel) = luaChannelMgr.lock().unwrap().get_channel(name) {
         Ok(channel)
     } else {
-        Err(mlua::Error::RuntimeError(format!(
-            "Channel {} not found",
-            name
-        )))
+        bee_thread_newchannel(lua, name.to_string())?;
+        Ok(luaChannelMgr.lock().unwrap().get_channel(name).unwrap())
     }
+}
+
+fn bee_thread_thread(_: &Lua) -> LuaResult<()> {
+    Ok(())
 }
 
 pub fn bee_thread(lua: &Lua) -> LuaResult<LuaTable> {
@@ -147,7 +149,11 @@ pub fn bee_thread(lua: &Lua) -> LuaResult<LuaTable> {
     )?;
     thread.set(
         "channel",
-        lua.create_function(|lua, name: String| Ok(bee_thread_channel(lua, name)))?,
+        lua.create_function(|lua, name: String| Ok(bee_thread_channel(lua, &name)))?,
+    )?;
+    thread.set(
+        "thread",
+        lua.create_function(|lua, ()| Ok(bee_thread_thread(lua)))?,
     )?;
     Ok(thread)
 }

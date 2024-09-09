@@ -66,7 +66,8 @@ impl LuaSocket {
         Ok(())
     }
 
-    async fn send(&mut self, data: String) -> LuaResult<()> {
+    async fn send(&mut self, data: String) -> LuaResult<i32> {
+        let len = data.len();
         match self.socket_stream.borrow_mut() {
             SocketStream::Tcp(stream) => {
                 stream.write_all(data.as_bytes()).await?;
@@ -77,7 +78,7 @@ impl LuaSocket {
             }
             _ => return Err(mlua::Error::RuntimeError("Invalid fd".to_string())),
         }
-        Ok(())
+        Ok(len as i32)
     }
 
     async fn recv(&mut self) -> LuaResult<String> {
@@ -255,11 +256,6 @@ impl LuaUserData for LuaSocket {
         methods.add_async_method_mut(
             "bind",
             |_, mut this, (addr, port): (String, Option<i32>)| async move {
-                // let addr = args.get(1).unwrap().to_string()?;
-                // let port = match args.get(2) {
-                //     Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
-                //     _ => 0,
-                // };
                 let port = port.unwrap_or(0);
                 this.bind(addr, port).await
             },

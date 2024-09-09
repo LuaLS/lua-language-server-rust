@@ -130,20 +130,20 @@ impl LuaUserData for LuaSelect {
         });
         methods.add_method_mut(
             "event_add",
-            |_, this, (socekt, flag, callback): (mlua::UserDataRefMut<LuaSocket>, i32, mlua::Function)| {
-                this.event_add(socekt, flag, callback)
+            |_, this, (socket, flag, callback): (mlua::UserDataRefMut<LuaSocket>, i32, mlua::Function)| {
+                this.event_add(socket, flag, callback)
             },
         );
         methods.add_method_mut(
             "event_mod",
-            |_, this, (socekt, flag): (mlua::UserDataRefMut<LuaSocket>, i32)| {
-                this.event_mod(socekt, flag)
+            |_, this, (socket, flag): (mlua::UserDataRefMut<LuaSocket>, i32)| {
+                this.event_mod(socket, flag)
             },
         );
 
         methods.add_method_mut(
             "event_del",
-            |_, this, socekt: mlua::UserDataRefMut<LuaSocket>| this.event_del(socekt),
+            |_, this, socket: mlua::UserDataRefMut<LuaSocket>| this.event_del(socket),
         );
     }
 }

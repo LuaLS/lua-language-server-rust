@@ -12,7 +12,7 @@ extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
 }
 
-#[tokio::main(flavor= "current_thread")]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> LuaResult<()> {
     let lua = unsafe { Lua::unsafe_new() };
     // lpeglabel
@@ -49,9 +49,20 @@ async fn main() -> LuaResult<()> {
     let bee_select_loader =
         lua.create_function(|lua: &Lua, ()| Ok(bee::lua_select::bee_select(lua)))?;
     add_preload_module(&lua, "bee.select", bee_select_loader)?;
+    // bee.filewatch
+    let bee_filewatch_loader =
+        lua.create_function(|lua: &Lua, ()| Ok(bee::lua_filewatch::bee_filewatch(lua)))?;
+    add_preload_module(&lua, "bee.filewatch", bee_filewatch_loader)?;
 
     // lua_seri
     lua_seri::register_lua_seri(&lua)?;
+
+    #[cfg(not(debug_assertions))]
+    {
+        let exe_path = env::current_exe().unwrap();
+        let exe_dir = exe_path.parent().unwrap();
+        std::env::set_current_dir(exe_dir)?;
+    }
 
     add_package_path(
         &lua,
@@ -59,7 +70,7 @@ async fn main() -> LuaResult<()> {
     )?;
 
     build_args(&lua);
-    let main = lua.load(path::Path::new("resources/testmain.lua"));
+    let main = lua.load(path::Path::new("resources/main.lua"));
     main.call_async(()).await?;
     Ok(())
 }

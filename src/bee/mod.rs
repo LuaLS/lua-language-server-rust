@@ -7,3 +7,4 @@ pub mod lua_subprocess;
 pub mod lua_socket;
 pub mod lua_select;
 pub mod socket;
+pub mod lua_filewatch;
