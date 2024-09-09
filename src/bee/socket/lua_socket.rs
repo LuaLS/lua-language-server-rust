@@ -87,7 +87,7 @@ impl LuaSocket {
         }
     }
 
-    async fn bind(&mut self, addr: String, port: i32) -> LuaResult<()> {
+    async fn bind(&mut self, addr: String, port: i32) -> LuaResult<bool> {
         match self.socket_type {
             SocketType::Tcp => {
                 let addr = format!("{}:{}", addr, port);
@@ -97,7 +97,7 @@ impl LuaSocket {
                     .lock()
                     .unwrap()
                     .insert_socket_stream(self.fd, stream);
-                Ok(())
+                Ok(true)
             }
             #[cfg(unix)]
             SocketType::Unix => {
@@ -107,7 +107,7 @@ impl LuaSocket {
                     .lock()
                     .unwrap()
                     .insert_socket_stream(self.fd, stream);
-                Ok(())
+                Ok(true)
             }
             _ => Err(mlua::Error::RuntimeError("Invalid fd".to_string())),
         }
