@@ -252,15 +252,18 @@ impl LuaUserData for LuaSocket {
             this.send(data).await
         });
         methods.add_async_method_mut("recv", |_, mut this, ()| async move { this.recv().await });
-        methods.add_async_method_mut("bind", |_, mut this, args: mlua::MultiValue| async move {
-            let addr = args.get(1).unwrap().to_string()?;
-            let port = match args.get(2) {
-                Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
-                _ => 0,
-            };
-
-            this.bind(addr, port).await
-        });
+        methods.add_async_method_mut(
+            "bind",
+            |_, mut this, (addr, port): (String, Option<i32>)| async move {
+                // let addr = args.get(1).unwrap().to_string()?;
+                // let port = match args.get(2) {
+                //     Some(mlua::Value::Integer(p)) => p.clone().try_into().unwrap_or(0),
+                //     _ => 0,
+                // };
+                let port = port.unwrap_or(0);
+                this.bind(addr, port).await
+            },
+        );
         methods.add_method_mut("listen", |_, this, ()| this.listen());
         methods.add_async_method_mut(
             "connect",
