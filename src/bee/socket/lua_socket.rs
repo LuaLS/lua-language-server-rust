@@ -113,8 +113,8 @@ impl LuaSocket {
         }
     }
 
-    fn listen(&self) -> LuaResult<()> {
-        Ok(())
+    fn listen(&self) -> LuaResult<bool> {
+        Ok(true)
     }
 
     async fn connect(&mut self, addr: String, port: i32) -> LuaResult<()> {

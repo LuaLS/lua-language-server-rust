@@ -11,15 +11,17 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=luals-rust",
+                    "--bin=lua-language-server",
                     "--package=luals-rust"
                 ],
                 "filter": {
-                    "name": "luals-rust",
+                    "name": "lua-language-server",
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": [
+                "--socket=5007"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {

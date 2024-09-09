@@ -2,6 +2,8 @@
 name = "luals-rust"
 version = "0.1.0"
 edition = "2021"
+license-file = "LICENSE"
+include = ["resources/**/*"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,3 +17,7 @@ notify = { version = "6.1.1", features = ["serde"] }
 [build-dependencies]
 cc = "1.0"
 glob = "0.3.0"
+
+[[bin]]
+name = "lua-language-server"
+path = "src/main.rs"

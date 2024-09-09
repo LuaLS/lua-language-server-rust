@@ -21,7 +21,7 @@ impl LuaSelect {
         }
     }
 
-    async fn wait(&mut self, time: u64) -> LuaResult<Vec<(mlua::Function, i32)>> {
+    async fn wait(&mut self, time: i32) -> LuaResult<Vec<(mlua::Function, i32)>> {
         let mut rest_time = time;
         let mut result = Vec::new();
 
@@ -56,7 +56,7 @@ impl LuaSelect {
         }
 
         if (result.len() == 0) && (rest_time > 0) {
-            tokio::time::sleep(tokio::time::Duration::from_millis(rest_time)).await;
+            tokio::time::sleep(tokio::time::Duration::from_millis(rest_time as u64)).await;
         }
 
         Ok(result)
@@ -82,7 +82,7 @@ impl LuaSelect {
 
 impl LuaUserData for LuaSelect {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_async_method_mut("wait", |lua, mut this, time: u64| async move {
+        methods.add_async_method_mut("wait", |lua, mut this, time: i32| async move {
             let results: Vec<(LuaFunction, i32)> = this.wait(time).await.unwrap();
             // why this code is not working?
             // let iter = Rc::new(RefCell::new(results.into_iter()));
