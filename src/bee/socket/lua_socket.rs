@@ -6,7 +6,9 @@ use tokio::net::{TcpListener, TcpStream};
 #[cfg(unix)]
 use tokio::net::{UnixListener, UnixStream};
 
-enum SocketStream {
+use super::lua_socket_pool::SOCKET_POOL;
+
+pub enum SocketStream {
     None,
     Tcp(TcpStream),
     TcpListener(TcpListener),
@@ -16,7 +18,7 @@ enum SocketStream {
     UnixListener(UnixListener),
 }
 
-enum SocketStreamData {
+pub enum SocketStreamData {
     Socket(LuaSocket),
     None,
 }
@@ -29,46 +31,28 @@ pub enum SocketType {
 
 pub struct LuaSocket {
     socket_type: SocketType,
-    socket_stream: SocketStream,
     pub fd: i32,
-    socket_data: Option<Vec<SocketStreamData>>,
 }
 
 impl LuaSocket {
-    pub fn new(socket_type: SocketType) -> LuaSocket {
-        LuaSocket {
-            socket_type,
-            socket_stream: SocketStream::None,
-            fd: 0,
-            socket_data: None,
-        }
+    pub fn new(socket_type: SocketType, fd: i32) -> LuaSocket {
+        LuaSocket { socket_type, fd }
     }
 
     fn close(&mut self) -> LuaResult<()> {
-        match self.socket_stream.borrow_mut() {
-            SocketStream::Tcp(stream) => {
-                let _ = stream;
-            }
-            SocketStream::TcpListener(stream) => {
-                let _ = stream;
-            }
-            #[cfg(unix)]
-            SocketStream::Unix(stream) => {
-                let _ = stream;
-            }
-            #[cfg(unix)]
-            SocketStream::UnixListener(stream) => {
-                let _ = stream;
-            }
-            SocketStream::None => {}
-        }
-
+        SOCKET_POOL.lock().unwrap().close_socket(self.fd)?;
         Ok(())
     }
 
     async fn send(&mut self, data: String) -> LuaResult<i32> {
         let len = data.len();
-        match self.socket_stream.borrow_mut() {
+        match SOCKET_POOL
+            .lock()
+            .unwrap()
+            .get_socket_stream(self.fd)
+            .unwrap()
+            .borrow_mut()
+        {
             SocketStream::Tcp(stream) => {
                 stream.write_all(data.as_bytes()).await?;
             }
@@ -83,7 +67,13 @@ impl LuaSocket {
 
     async fn recv(&mut self) -> LuaResult<String> {
         let mut buf = vec![0; 1024];
-        match self.socket_stream.borrow_mut() {
+        match SOCKET_POOL
+            .lock()
+            .unwrap()
+            .get_socket_stream(self.fd)
+            .unwrap()
+            .borrow_mut()
+        {
             SocketStream::Tcp(stream) => {
                 let n = stream.read(&mut buf).await?;
                 Ok(String::from_utf8_lossy(&buf[..n]).to_string())
@@ -102,21 +92,28 @@ impl LuaSocket {
             SocketType::Tcp => {
                 let addr = format!("{}:{}", addr, port);
                 let listener = TcpListener::bind(addr).await?;
-                self.socket_stream = SocketStream::TcpListener(listener);
+                let stream = SocketStream::TcpListener(listener);
+                SOCKET_POOL
+                    .lock()
+                    .unwrap()
+                    .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
             #[cfg(unix)]
             SocketType::Unix => {
                 let listener = UnixListener::bind(addr).await?;
-                self.socket_stream = SocketStream::UnixListener(listener);
+                let stream = SocketStream::UnixListener(listener);
+                SOCKET_POOL
+                    .lock()
+                    .unwrap()
+                    .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
             _ => Err(mlua::Error::RuntimeError("Invalid fd".to_string())),
         }
     }
 
-    fn listen(&mut self) -> LuaResult<()> {
-        self.socket_data = Some(Vec::new());
+    fn listen(&self) -> LuaResult<()> {
         Ok(())
     }
 
@@ -125,13 +122,21 @@ impl LuaSocket {
             SocketType::Tcp => {
                 let addr = format!("{}:{}", addr, port);
                 let stream = TcpStream::connect(addr).await?;
-                self.socket_stream = SocketStream::Tcp(stream);
+                let stream = SocketStream::Tcp(stream);
+                SOCKET_POOL
+                    .lock()
+                    .unwrap()
+                    .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
             #[cfg(unix)]
             SocketType::Unix => {
                 let stream = UnixStream::connect(addr).await?;
-                self.socket_stream = SocketStream::Unix(stream);
+                let stream = SocketStream::Unix(stream);
+                SOCKET_POOL
+                    .lock()
+                    .unwrap()
+                    .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
             _ => Err(mlua::Error::RuntimeError("Invalid fd".to_string())),
@@ -139,111 +144,46 @@ impl LuaSocket {
     }
 
     async fn accept(&mut self) -> LuaResult<LuaSocket> {
-        if let Some(socket_data) = &mut self.socket_data {
+        let mut socket_pool = SOCKET_POOL.lock().unwrap();
+        if let Some(socket_data) = socket_pool.get_socket_data(self.fd) {
             if socket_data.len() > 0 {
-                let socket = socket_data.remove(0);
-                if let SocketStreamData::Socket(socket) = socket {
+                if let SocketStreamData::Socket(socket) = socket_data.remove(0) {
                     return Ok(socket);
                 }
             }
         }
 
-        match self.socket_stream.borrow_mut() {
+        match socket_pool.get_socket_stream(self.fd).unwrap().borrow_mut() {
             SocketStream::TcpListener(listener) => {
                 let (stream, _) = listener.accept().await?;
-                Ok(LuaSocket {
-                    socket_type: SocketType::Tcp,
-                    socket_stream: SocketStream::Tcp(stream),
-                    fd: 0,
-                    socket_data: None,
-                })
+                let socket = socket_pool.create_socket(SocketType::Tcp).unwrap();
+                let stream = SocketStream::Tcp(stream);
+                socket_pool.insert_socket_stream(socket.fd, stream);
+                Ok(socket)
             }
             #[cfg(unix)]
             SocketStream::UnixListener(listener) => {
                 let (stream, _) = listener.accept().await?;
-                Ok(LuaSocket {
-                    socket_type: SocketType::Unix,
-                    socket_stream: SocketStream::Unix(stream),
-                    fd: 0,
-                    socket_data: None,
-                })
+                let socket = socket_pool.create_socket(SocketType::Unix).unwrap();
+                let stream = SocketStream::Unix(stream);
+                socket_pool.insert_socket_stream(socket.fd, stream);
+                Ok(socket)
             }
             _ => Err(mlua::Error::RuntimeError("Invalid fd".to_string())),
         }
     }
 
     fn status(&self) -> LuaResult<bool> {
-        match self.socket_stream {
-            SocketStream::Tcp(_) => Ok(true),
-            #[cfg(unix)]
-            SocketStream::Unix(_) => Ok(true),
-            _ => Ok(false),
+        match SOCKET_POOL
+            .lock()
+            .unwrap()
+            .get_socket_stream(self.fd)
+        {
+            Some(_) => Ok(true),
+            None => Ok(false),
         }
     }
 
-    pub async fn can_read(&mut self) -> LuaResult<bool> {
-        match &self.socket_stream {
-            SocketStream::Tcp(stream) => match stream.readable().await {
-                Ok(_) => Ok(true),
-                Err(_) => Ok(false),
-            },
-            SocketStream::TcpListener(tcp_listener) => match tcp_listener.accept().await {
-                Ok(client) => {
-                    let (stream, _) = client;
-                    if let Some(socket_data) = &mut self.socket_data {
-                        socket_data.push(SocketStreamData::Socket(LuaSocket {
-                            socket_type: SocketType::Tcp,
-                            socket_stream: SocketStream::Tcp(stream),
-                            fd: 0,
-                            socket_data: None,
-                        }));
-                    }
-                    Ok(true)
-                }
-                Err(_) => Ok(false),
-            },
-            #[cfg(unix)]
-            SocketStream::Unix(stream) => {
-                let mut buf = vec![0; 1];
-                match stream.try_read(&mut buf) {
-                    Ok(_) => Ok(true),
-                    Err(_) => Ok(false),
-                }
-            }
-            #[cfg(unix)]
-            SocketStream::UnixListener(unix_listener) => match unix_listener.accept().await {
-                Ok(client) => {
-                    let (stream, _) = client;
-                    if let Some(socket_data) = &mut self.socket_data {
-                        socket_data.push(SocketStreamData::Socket(LuaSocket {
-                            socket_type: SocketType::Unix,
-                            socket_stream: SocketStream::Unix(stream),
-                            fd: 0,
-                            socket_data: None,
-                        }));
-                    }
-                    Ok(true)
-                }
-                Err(_) => Ok(false),
-            },
-            _ => Ok(false),
-        }
-    }
-
-    pub async fn can_write(&mut self) -> LuaResult<bool> {
-        match &self.socket_stream {
-            SocketStream::Tcp(stream) => match stream.writable().await {
-                Ok(_) => Ok(true),
-                Err(_) => Ok(false),
-            },
-            #[cfg(unix)]
-            SocketStream::Unix(stream) => match stream.writable().await {
-                Ok(_) => Ok(true),
-                Err(_) => Ok(false),
-            },
-            _ => Ok(false),
-        }
-    }
 }
 
 impl LuaUserData for LuaSocket {

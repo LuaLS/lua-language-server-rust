@@ -8,19 +8,16 @@ use std::collections::HashMap;
 use tokio::select;
 
 use super::lua_socket::LuaSocket;
+use super::lua_socket_pool::SOCKET_POOL;
 
 pub struct LuaSelect {
-    sockets: HashMap<i32, mlua::UserDataRefMut<LuaSocket>>,
-    callbacks: HashMap<i32, (mlua::Function, i32)>,
-    id_counter: i32,
+    events: HashMap<i32, (mlua::Function, i32)>,
 }
 
 impl LuaSelect {
     pub fn new() -> LuaSelect {
         LuaSelect {
-            callbacks: HashMap::new(),
-            sockets: HashMap::new(),
-            id_counter: 1,
+            events: HashMap::new(),
         }
     }
 
@@ -29,15 +26,16 @@ impl LuaSelect {
         let mut result = Vec::new();
 
         let callbacks: Vec<(i32, mlua::Function, i32)> = self
-            .callbacks
+            .events
             .iter()
             .map(|(socket_id, (callback, flag))| (*socket_id, callback.clone(), *flag))
             .collect();
-        for (socket_id, callback, flag) in callbacks {
-            if let Some(socket) = self.sockets.get_mut(&socket_id) {
+        {
+            let mut socket_pool = SOCKET_POOL.lock().unwrap();
+            for (socket_id, callback, flag) in callbacks {
                 if flag & 0x01 != 0 {
                     select! {
-                        _ = socket.can_read() => {
+                        _ = socket_pool.can_read(socket_id) => {
                             result.push((callback.clone(), 0x01));
                         }
                         _ = tokio::time::sleep(tokio::time::Duration::from_millis(1)) => {}
@@ -47,7 +45,7 @@ impl LuaSelect {
 
                 if flag & 0x02 != 0 {
                     select! {
-                        _ = socket.can_write() => {
+                        _ = socket_pool.can_write(socket_id) => {
                             result.push((callback.clone(), 0x02));
                         }
                         _ = tokio::time::sleep(tokio::time::Duration::from_millis(1)) => {}
@@ -64,49 +62,27 @@ impl LuaSelect {
         Ok(result)
     }
 
-    fn event_add(
-        &mut self,
-        mut socket: mlua::UserDataRefMut<LuaSocket>,
-        flag: i32,
-        callback: mlua::Function,
-    ) -> LuaResult<()> {
-        self.may_add_id(&mut socket);
-        self.callbacks.insert(socket.fd, (callback, flag));
-        self.sockets.insert(socket.fd, socket);
+    fn event_add(&mut self, fd: i32, flag: i32, callback: mlua::Function) -> LuaResult<()> {
+        self.events.insert(fd, (callback, flag));
         Ok(())
     }
 
-    fn event_mod(
-        &mut self,
-        mut socket: mlua::UserDataRefMut<LuaSocket>,
-        flag: i32,
-    ) -> LuaResult<()> {
-        self.may_add_id(&mut socket);
-        if let Some((_, old_flag)) = self.callbacks.get_mut(&socket.fd) {
+    fn event_mod(&mut self, fd: i32, flag: i32) -> LuaResult<()> {
+        if let Some((_, old_flag)) = self.events.get_mut(&fd) {
             *old_flag = flag;
         }
         Ok(())
     }
 
-    fn event_del(&mut self, mut socket: mlua::UserDataRefMut<LuaSocket>) -> LuaResult<()> {
-        self.may_add_id(&mut socket);
-        self.sockets.remove(&socket.fd);
-        self.callbacks.remove(&socket.fd);
+    fn event_del(&mut self, fd: i32) -> LuaResult<()> {
+        self.events.remove(&fd);
         Ok(())
-    }
-
-    fn may_add_id(&mut self, socket: &mut mlua::UserDataRefMut<LuaSocket>) {
-        let id = socket.fd;
-        if id == 0 {
-            self.id_counter += 1;
-            socket.borrow_mut().fd = self.id_counter;
-        }
     }
 }
 
 impl LuaUserData for LuaSelect {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_async_method_mut("wait", |lua,mut this, time: u64| async move {
+        methods.add_async_method_mut("wait", |lua, mut this, time: u64| async move {
             let results: Vec<(LuaFunction, i32)> = this.wait(time).await.unwrap();
             // why this code is not working?
             // let iter = Rc::new(RefCell::new(results.into_iter()));
@@ -130,20 +106,20 @@ impl LuaUserData for LuaSelect {
         });
         methods.add_method_mut(
             "event_add",
-            |_, this, (socket, flag, callback): (mlua::UserDataRefMut<LuaSocket>, i32, mlua::Function)| {
-                this.event_add(socket, flag, callback)
+            |_, this, (socket, flag, callback): (mlua::UserDataRef<LuaSocket>, i32, mlua::Function)| {
+                this.event_add(socket.fd, flag, callback)
             },
         );
         methods.add_method_mut(
             "event_mod",
-            |_, this, (socket, flag): (mlua::UserDataRefMut<LuaSocket>, i32)| {
-                this.event_mod(socket, flag)
+            |_, this, (socket, flag): (mlua::UserDataRef<LuaSocket>, i32)| {
+                this.event_mod(socket.fd, flag)
             },
         );
 
         methods.add_method_mut(
             "event_del",
-            |_, this, socket: mlua::UserDataRefMut<LuaSocket>| this.event_del(socket),
+            |_, this, socket: mlua::UserDataRef<LuaSocket>| this.event_del(socket.fd),
         );
     }
 }

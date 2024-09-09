@@ -36,22 +36,19 @@ print("listen complete")
 -- local cfd = fd:accept()
 -- print(cfd)
 
--- selector:event_add(fd, 1, function()
---     print("listener fd", fd)
---     local cfd = fd:accept()
---     print("accept a connection", cfd)
--- end)
+selector:event_add(fd, 1, function()
+    print("listener fd", fd)
+    local cfd = fd:accept()
+    print("accept a connection", cfd)
+end)
 
--- local cfd = fd:accept()
--- print(cfd)
-
--- while true do
---     for func, event in selector:wait(1000) do
---         print("func", func, "event", event)
---         if func then
---             func(event)
---         end
---     end
--- end
+while true do
+    for func, event in selector:wait(1000) do
+        print("func", func, "event", event)
+        if func then
+            func(event)
+        end
+    end
+end
 
 

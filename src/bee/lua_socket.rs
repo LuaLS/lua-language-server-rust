@@ -1,12 +1,13 @@
+use super::socket::lua_socket::{LuaSocket, SocketType};
+use super::socket::lua_socket_pool::SOCKET_POOL;
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
-use super::socket::lua_socket::{LuaSocket, SocketType};
-
 
 fn bee_socket_create(_: &Lua, protocol: String) -> LuaResult<LuaSocket> {
+    let mut socket_pool = SOCKET_POOL.lock().unwrap();
     let socket = match protocol.as_str() {
-        "tcp" => LuaSocket::new(SocketType::Tcp),
-        "unix" => LuaSocket::new(SocketType::Unix),
+        "tcp" => socket_pool.create_socket(SocketType::Tcp).unwrap(),
+        "unix" => socket_pool.create_socket(SocketType::Unix).unwrap(),
         _ => return Err(LuaError::external("Invalid protocol")),
     };
 

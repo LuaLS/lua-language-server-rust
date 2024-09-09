@@ -70,7 +70,7 @@ async fn main() -> LuaResult<()> {
     )?;
 
     build_args(&lua);
-    let main = lua.load(path::Path::new("resources/main.lua"));
+    let main = lua.load(path::Path::new("resources/testmain.lua"));
     main.call_async(()).await?;
     Ok(())
 }
