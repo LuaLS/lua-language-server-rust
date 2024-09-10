@@ -1,6 +1,5 @@
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
-use std::borrow::BorrowMut;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 #[cfg(unix)]
@@ -39,20 +38,14 @@ impl LuaSocket {
         LuaSocket { socket_type, fd }
     }
 
-    fn close(&mut self) -> LuaResult<()> {
-        SOCKET_POOL.lock().unwrap().close_socket(self.fd)?;
+    async fn close(&mut self) -> LuaResult<()> {
+        SOCKET_POOL.lock().await.close_socket(self.fd)?;
         Ok(())
     }
 
     async fn send(&mut self, data: String) -> LuaResult<i32> {
         let len = data.len();
-        match SOCKET_POOL
-            .lock()
-            .unwrap()
-            .get_socket_stream(self.fd)
-            .unwrap()
-            .borrow_mut()
-        {
+        match SOCKET_POOL.lock().await.get_socket_stream(self.fd).unwrap() {
             SocketStream::Tcp(stream) => {
                 stream.write_all(data.as_bytes()).await?;
             }
@@ -67,13 +60,7 @@ impl LuaSocket {
 
     async fn recv(&mut self) -> LuaResult<String> {
         let mut buf = vec![0; 1024];
-        match SOCKET_POOL
-            .lock()
-            .unwrap()
-            .get_socket_stream(self.fd)
-            .unwrap()
-            .borrow_mut()
-        {
+        match SOCKET_POOL.lock().await.get_socket_stream(self.fd).unwrap() {
             SocketStream::Tcp(stream) => {
                 let n = stream.read(&mut buf).await?;
                 Ok(String::from_utf8_lossy(&buf[..n]).to_string())
@@ -95,7 +82,7 @@ impl LuaSocket {
                 let stream = SocketStream::TcpListener(listener);
                 SOCKET_POOL
                     .lock()
-                    .unwrap()
+                    .await
                     .insert_socket_stream(self.fd, stream);
                 Ok(true)
             }
@@ -105,7 +92,7 @@ impl LuaSocket {
                 let stream = SocketStream::UnixListener(listener);
                 SOCKET_POOL
                     .lock()
-                    .unwrap()
+                    .await
                     .insert_socket_stream(self.fd, stream);
                 Ok(true)
             }
@@ -125,7 +112,7 @@ impl LuaSocket {
                 let stream = SocketStream::Tcp(stream);
                 SOCKET_POOL
                     .lock()
-                    .unwrap()
+                    .await
                     .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
@@ -135,7 +122,7 @@ impl LuaSocket {
                 let stream = SocketStream::Unix(stream);
                 SOCKET_POOL
                     .lock()
-                    .unwrap()
+                    .await
                     .insert_socket_stream(self.fd, stream);
                 Ok(())
             }
@@ -144,7 +131,7 @@ impl LuaSocket {
     }
 
     async fn accept(&mut self) -> LuaResult<LuaSocket> {
-        let mut socket_pool = SOCKET_POOL.lock().unwrap();
+        let mut socket_pool = SOCKET_POOL.lock().await;
         if let Some(socket_data) = socket_pool.get_socket_data(self.fd) {
             if socket_data.len() > 0 {
                 if let SocketStreamData::Socket(socket) = socket_data.remove(0) {
@@ -153,7 +140,7 @@ impl LuaSocket {
             }
         }
 
-        match socket_pool.get_socket_stream(self.fd).unwrap().borrow_mut() {
+        match socket_pool.get_socket_stream(self.fd).unwrap() {
             SocketStream::TcpListener(listener) => {
                 let (stream, _) = listener.accept().await?;
                 let socket = socket_pool.create_socket(SocketType::Tcp).unwrap();
@@ -173,22 +160,17 @@ impl LuaSocket {
         }
     }
 
-    fn status(&self) -> LuaResult<bool> {
-        match SOCKET_POOL
-            .lock()
-            .unwrap()
-            .get_socket_stream(self.fd)
-        {
+    async fn status(&self) -> LuaResult<bool> {
+        match SOCKET_POOL.lock().await.get_socket_stream(self.fd) {
             Some(_) => Ok(true),
             None => Ok(false),
         }
     }
-
 }
 
 impl LuaUserData for LuaSocket {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_method_mut("close", |_, this, ()| this.close());
+        methods.add_async_method_mut("close", |_, mut this, ()| async move { this.close().await });
         methods.add_async_method_mut("send", |_, mut this, data: String| async move {
             this.send(data).await
         });
@@ -216,6 +198,6 @@ impl LuaUserData for LuaSocket {
             "accept",
             |_, mut this, ()| async move { this.accept().await },
         );
-        methods.add_method("status", |_, this, ()| this.status());
+        methods.add_async_method("status", |_, this, ()| async move { this.status().await });
     }
 }

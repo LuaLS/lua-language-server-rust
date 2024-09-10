@@ -31,7 +31,7 @@ impl LuaSelect {
             .map(|(socket_id, (callback, flag))| (*socket_id, callback.clone(), *flag))
             .collect();
         {
-            let mut socket_pool = SOCKET_POOL.lock().unwrap();
+            let mut socket_pool = SOCKET_POOL.lock().await;
             for (socket_id, callback, flag) in callbacks {
                 if flag & 0x01 != 0 {
                     select! {

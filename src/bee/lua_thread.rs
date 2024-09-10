@@ -1,9 +1,13 @@
+use crate::lua_preload;
 use lazy_static::lazy_static;
 use mlua::prelude::LuaResult;
 use mlua::{prelude::*, Lua, UserData};
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::Mutex;
+use std::thread;
 use std::time::Duration;
+use tokio::runtime::Builder;
 use tokio::sync::mpsc;
 
 #[derive(Clone, Debug)]
@@ -24,8 +28,8 @@ impl LuaChannel {
 
 pub struct LuaChannelMgr {
     channels: HashMap<String, LuaChannel>,
-    receivers: HashMap<i64, mpsc::Receiver<i64>>,
-    senders: HashMap<i64, mpsc::Sender<i64>>,
+    receivers: HashMap<i64, Arc<Mutex<mpsc::Receiver<i64>>>>,
+    senders: HashMap<i64, Arc<Mutex<mpsc::Sender<i64>>>>,
     id_counter: i64,
 }
 
@@ -45,33 +49,25 @@ impl LuaChannelMgr {
         self.id_counter += 1;
         let channel = LuaChannel::new(name.clone(), id);
         self.channels.insert(name.clone(), channel);
-        self.receivers.insert(id, receiver);
-        self.senders.insert(id, sender);
+        self.receivers.insert(id, Arc::new(Mutex::new(receiver)));
+        self.senders.insert(id, Arc::new(Mutex::new(sender)));
     }
 
     pub fn get_channel(&self, name: &str) -> Option<LuaChannel> {
         self.channels.get(name).cloned()
     }
 
-    pub async fn push(&self, id: i64, data: i64) -> Result<(), mpsc::error::SendError<i64>> {
-        if let Some(sender) = self.senders.get(&id) {
-            sender.send(data).await
-        } else {
-            Err(mpsc::error::SendError(data))
-        }
+    pub fn get_sender(&self, id: i64) -> Option<Arc<Mutex<mpsc::Sender<i64>>>> {
+        self.senders.get(&id).cloned()
     }
 
-    pub async fn pop(&mut self, id: i64) -> Option<i64> {
-        if let Some(receiver) = self.receivers.get_mut(&id) {
-            receiver.recv().await
-        } else {
-            None
-        }
+    pub fn get_receiver(&self, id: i64) -> Option<Arc<Mutex<mpsc::Receiver<i64>>>> {
+        self.receivers.get(&id).cloned()
     }
 }
 
 lazy_static! {
-    static ref luaChannelMgr: Mutex<LuaChannelMgr> = Mutex::new(LuaChannelMgr::new());
+    static ref ChannelMgr: Arc<Mutex<LuaChannelMgr>> = Arc::new(Mutex::new(LuaChannelMgr::new()));
 }
 
 impl UserData for LuaChannel {
@@ -84,35 +80,47 @@ impl UserData for LuaChannel {
             let id = this.id;
             let lua_seri_pack = lua.globals().get::<LuaFunction>("lua_seri_pack")?;
             let ptr = lua_seri_pack.call::<i64>(args).unwrap();
-            luaChannelMgr.lock().unwrap().push(id, ptr).await.unwrap();
+            let opt_sender = { ChannelMgr.lock().unwrap().get_sender(id) };
+            if let Some(sender) = opt_sender {
+                let sender = sender.lock().unwrap();
+                sender.send(ptr).await.unwrap();
+            }
             Ok(())
         });
 
         methods.add_async_method("pop", |lua, this, ()| async move {
             let id = this.id;
-            let data = luaChannelMgr.lock().unwrap().pop(id).await;
-            if let Some(data) = data {
-                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
-                let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
-                returns.insert(0, mlua::Value::Boolean(true));
-                Ok(returns)
-            } else {
-                let mut returns = mlua::MultiValue::new();
-                returns.insert(0, mlua::Value::Boolean(false));
-                Ok(returns)
+            let opt_receiver = { ChannelMgr.lock().unwrap().get_receiver(id) };
+            if let Some(receiver) = opt_receiver {
+                let data = receiver.lock().unwrap().recv().await;
+                if let Some(data) = data {
+                    let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                    let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
+                    returns.insert(0, mlua::Value::Boolean(true));
+                    return Ok(returns);
+                }
             }
+
+            let mut returns = mlua::MultiValue::new();
+            returns.insert(0, mlua::Value::Boolean(false));
+            Ok(returns)
         });
 
         methods.add_async_method("bpop", |lua, this, ()| async move {
             let id = this.id;
-            let data = luaChannelMgr.lock().unwrap().pop(id).await;
-            if let Some(data) = data {
-                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
-                let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
-                Ok(returns)
-            } else {
-                Err(mlua::Error::RuntimeError("Channel is closed".to_string()))
+            let opt_receiver = { ChannelMgr.lock().unwrap().get_receiver(id) };
+            if let Some(receiver) = opt_receiver {
+                let data = receiver.lock().unwrap().recv().await;
+                if let Some(data) = data {
+                    let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                    let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
+                    returns.insert(0, mlua::Value::Boolean(true));
+                    return Ok(returns);
+                }
             }
+
+            let returns = mlua::MultiValue::new();
+            Ok(returns)
         });
     }
 }
@@ -123,41 +131,46 @@ async fn bee_thread_sleep(_: Lua, time: u64) -> LuaResult<()> {
 }
 
 fn bee_thread_newchannel(_: &Lua, name: String) -> LuaResult<()> {
-    luaChannelMgr.lock().unwrap().new_channel(name);
+    ChannelMgr.lock().unwrap().new_channel(name);
     Ok(())
 }
 
-fn bee_thread_channel(_: &Lua, name: &str) -> LuaResult<LuaChannel> {
-    let mut mgr = luaChannelMgr.lock().unwrap();
-    if let Some(channel) = mgr.get_channel(name) {
+fn bee_thread_channel(_: &Lua, name: String) -> LuaResult<LuaChannel> {
+    let mut mgr = ChannelMgr.lock().unwrap();
+    if let Some(channel) = mgr.get_channel(&name) {
         Ok(channel)
     } else {
         mgr.new_channel(name.to_string());
-        if let Some(channel) = mgr.get_channel(name) {
+        if let Some(channel) = mgr.get_channel(&name) {
             return Ok(channel);
         }
         Err(mlua::Error::RuntimeError("Channel not found".to_string()))
     }
 }
 
-fn bee_thread_thread(_: &Lua) -> LuaResult<()> {
+fn bee_thread_thread(_: &Lua, script: String) -> LuaResult<()> {
+    thread::spawn(move || {
+        let rt = Builder::new_current_thread().enable_all().build().unwrap();
+        rt.block_on(async move {
+            let lua = unsafe { Lua::unsafe_new() };
+            if let Err(e) = lua_preload::lua_preload(&lua) {
+                eprintln!("Error during lua_preload: {:?}", e);
+                return;
+            }
+            lua.load(script.as_bytes())
+                .call_async::<()>(())
+                .await
+                .unwrap();
+        });
+    });
     Ok(())
 }
 
 pub fn bee_thread(lua: &Lua) -> LuaResult<LuaTable> {
     let thread = lua.create_table()?;
     thread.set("sleep", lua.create_async_function(bee_thread_sleep)?)?;
-    thread.set(
-        "newchannel",
-        lua.create_function(|lua, name: String| Ok(bee_thread_newchannel(lua, name)))?,
-    )?;
-    thread.set(
-        "channel",
-        lua.create_function(|lua, name: String| Ok(bee_thread_channel(lua, &name)))?,
-    )?;
-    thread.set(
-        "thread",
-        lua.create_function(|lua, ()| Ok(bee_thread_thread(lua)))?,
-    )?;
+    thread.set("newchannel", lua.create_function(bee_thread_newchannel)?)?;
+    thread.set("channel", lua.create_function(bee_thread_channel)?)?;
+    thread.set("thread", lua.create_function(bee_thread_thread)?)?;
     Ok(thread)
 }
