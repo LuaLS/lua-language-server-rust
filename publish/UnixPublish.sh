@@ -2,10 +2,12 @@
 
 cargo build --release
 
-if [ ! -d "dist" ]; then
-    mkdir dist
+if [ -d "dist" ]; then
+    rm -rf dist
 fi
 
-cp target/release/lua-language-server.exe dist/
+mkdir dist
+
+cp target/release/lua-language-server dist/
 
 cp -r resources dist/

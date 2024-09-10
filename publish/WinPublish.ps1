@@ -1,9 +1,13 @@
 cargo build --release
 
-if (-Not (Test-Path -Path "dist")) {
-    New-Item -ItemType Directory -Path "dist"
+$distPath = "dist"
+
+if (Test-Path -Path $distPath) {
+    Remove-Item -Path $distPath -Recurse -Force
 }
 
-Copy-Item -Path "target/release/lua-language-server.exe" -Destination "dist/"
+New-Item -ItemType Directory -Path $distPath
 
-Copy-Item -Path "resources" -Destination "dist/" -Recurse
+Copy-Item -Path "target/release/lua-language-server.exe" -Destination $distPath
+
+Copy-Item -Path "resources" -Destination $distPath -Recurse

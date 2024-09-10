@@ -14,7 +14,7 @@ unsafe extern "C-unwind" fn lua_seri_pack(lua_state: *mut lua_State) -> i32 {
         return 0;
     }
 
-    let buffer_id = seri_pack(lua_state, 1, std::ptr::null_mut());
+    let buffer_id = seri_pack(lua_state, 0, std::ptr::null_mut());
     ffi::lua_pushinteger(lua_state, buffer_id as i64);
     1
 }

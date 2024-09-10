@@ -113,8 +113,7 @@ impl UserData for LuaChannel {
                 let data = receiver.lock().unwrap().recv().await;
                 if let Some(data) = data {
                     let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
-                    let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
-                    returns.insert(0, mlua::Value::Boolean(true));
+                    let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
                     return Ok(returns);
                 }
             }

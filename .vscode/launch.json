@@ -20,7 +20,7 @@
                 }
             },
             "args": [
-                "--socket=5007"
+               
             ],
             "cwd": "${workspaceFolder}"
         },
