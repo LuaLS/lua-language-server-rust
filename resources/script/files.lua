@@ -66,12 +66,13 @@ local uriMap = {}
 ---@return fs.path
 local function getRealParent(path)
     local parent = path:parent_path()
-    if parent:string():gsub('^%w+:', string.lower)
-    == path  :string():gsub('^%w+:', string.lower) then
-        return path
-    end
-    local res = fs.fullpath(path)
-    return getRealParent(parent) / res:filename()
+    return parent
+    -- if parent:string():gsub('^%w+:', string.lower)
+    -- == path  :string():gsub('^%w+:', string.lower) then
+    --     return path
+    -- end
+    -- local res = fs.fullpath(path)
+    -- return getRealParent(parent) / res:filename()
 end
 
 -- 获取文件的真实uri，但不穿透软链接

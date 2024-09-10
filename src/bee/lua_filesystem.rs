@@ -5,6 +5,7 @@ use std::os::unix::fs::symlink;
 
 #[cfg(windows)]
 use std::os::windows::fs::symlink_file;
+use std::path;
 
 #[derive(Clone, Debug)]
 pub struct LuaFilePath {
@@ -194,18 +195,18 @@ fn create_directories(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
     Ok(())
 }
 
-fn rename(_: &Lua, (old_path, new_path): (String, String)) -> LuaResult<()> {
-    std::fs::rename(&old_path, &new_path)?;
+fn rename(_: &Lua, (old_path, new_path): (LuaFilePath, LuaFilePath)) -> LuaResult<()> {
+    std::fs::rename(&old_path.path, &new_path.path)?;
     Ok(())
 }
 
-fn remove(_: &Lua, path: String) -> LuaResult<()> {
-    std::fs::remove_file(&path)?;
+fn remove(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
+    std::fs::remove_file(&path.path)?;
     Ok(())
 }
 
-fn remove_all(_: &Lua, path: String) -> LuaResult<()> {
-    std::fs::remove_dir_all(&path)?;
+fn remove_all(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
+    std::fs::remove_dir_all(&path.path)?;
     Ok(())
 }
 
@@ -219,48 +220,47 @@ fn current_path(_: &Lua, (): ()) -> LuaResult<LuaFilePath> {
     ))
 }
 
-fn copy(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
-    std::fs::copy(&source, &destination)?;
+fn copy(_: &Lua, (source, destination): (LuaFilePath, LuaFilePath)) -> LuaResult<()> {
+    std::fs::copy(&source.path, &destination.path)?;
     Ok(())
 }
 
-fn copy_file(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
-    std::fs::copy(&source, &destination)?;
+fn copy_file(_: &Lua, (source, destination): (LuaFilePath, LuaFilePath)) -> LuaResult<()> {
+    std::fs::copy(&source.path, &destination.path)?;
     Ok(())
 }
 
-fn absolute(_: &Lua, path: String) -> LuaResult<LuaFilePath> {
+fn absolute(_: &Lua, path: LuaFilePath) -> LuaResult<LuaFilePath> {
+    let canonical_path = std::fs::canonicalize(&path.path)?;
+
+    let full_path_str = canonical_path.to_str().unwrap_or("").to_string();
+
+    // 移除 \\?\ 前缀
+    let full_path_str = if full_path_str.starts_with(r"\\?\") {
+        full_path_str.trim_start_matches(r"\\?\").to_string()
+    } else {
+        full_path_str
+    };
+
+    Ok(LuaFilePath::new(full_path_str))
+}
+
+fn canonical(lua: &Lua, path: LuaFilePath) -> LuaResult<LuaFilePath> {
+    absolute(lua, path)
+}
+
+fn relative(_: &Lua, (from, to): (LuaFilePath, LuaFilePath)) -> LuaResult<LuaFilePath> {
     Ok(LuaFilePath::new(
-        std::fs::canonicalize(&path)
-            .unwrap()
+        std::path::Path::new(&from.path)
+            .join(&to.path)
             .to_str()
             .unwrap_or("")
             .to_string(),
     ))
 }
 
-fn canonical(_: &Lua, path: String) -> LuaResult<LuaFilePath> {
-    Ok(LuaFilePath::new(
-        std::fs::canonicalize(&path)
-            .unwrap()
-            .to_str()
-            .unwrap_or("")
-            .to_string(),
-    ))
-}
-
-fn relative(_: &Lua, (from, to): (String, String)) -> LuaResult<LuaFilePath> {
-    Ok(LuaFilePath::new(
-        std::path::Path::new(&from)
-            .join(&to)
-            .to_str()
-            .unwrap_or("")
-            .to_string(),
-    ))
-}
-
-fn last_write_time(_: &Lua, path: String) -> LuaResult<u64> {
-    Ok(std::fs::metadata(&path)
+fn last_write_time(_: &Lua, path: LuaFilePath) -> LuaResult<u64> {
+    Ok(std::fs::metadata(&path.path)
         .map(|m| {
             m.modified()
                 .unwrap()
@@ -271,37 +271,40 @@ fn last_write_time(_: &Lua, path: String) -> LuaResult<u64> {
         .unwrap_or(0u64))
 }
 
-fn permissions(_: &Lua, path: String) -> LuaResult<u32> {
+fn permissions(_: &Lua, path: LuaFilePath) -> LuaResult<u32> {
     let _ = path;
     Ok(0u32)
 }
 
-fn create_symlink(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
+fn create_symlink(_: &Lua, (source, destination): (LuaFilePath, LuaFilePath)) -> LuaResult<()> {
     #[cfg(unix)]
     {
-        symlink(&source, &destination)?;
+        symlink(&source.path, &destination.path)?;
     }
     #[cfg(windows)]
     {
-        symlink_file(&source, &destination)?;
+        symlink_file(&source.path, &destination.path)?;
     }
     Ok(())
 }
 
-fn create_directory_symlink(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
+fn create_directory_symlink(
+    _: &Lua,
+    (source, destination): (LuaFilePath, LuaFilePath),
+) -> LuaResult<()> {
     #[cfg(unix)]
     {
-        std::os::unix::fs::symlink(&source, &destination)?;
+        std::os::unix::fs::symlink(&source.path, &destination.path)?;
     }
     #[cfg(windows)]
     {
-        std::os::windows::fs::symlink_dir(&source, &destination)?;
+        std::os::windows::fs::symlink_dir(&source.path, &destination.path)?;
     }
     Ok(())
 }
 
-fn create_hard_link(_: &Lua, (source, destination): (String, String)) -> LuaResult<()> {
-    std::fs::hard_link(&source, &destination)?;
+fn create_hard_link(_: &Lua, (source, destination): (LuaFilePath, LuaFilePath)) -> LuaResult<()> {
+    std::fs::hard_link(&source.path, &destination.path)?;
     Ok(())
 }
 
@@ -318,6 +321,40 @@ fn temp_directory_path(_: &Lua, (): ()) -> LuaResult<LuaFilePath> {
 // fn pairs_r_ctor(_: &Lua, table: Table) -> LuaResult<mlua::Function> {
 //     Ok(table.pairs())
 // }
+
+fn full_path(lua: &Lua, path: LuaFilePath) -> LuaResult<LuaFilePath> {
+    absolute(lua, path)
+}
+
+struct SymlinkStatus(String);
+
+impl SymlinkStatus {
+    fn new(file_type: String) -> Self {
+        SymlinkStatus(file_type)
+    }
+}
+
+impl UserData for SymlinkStatus {
+    fn add_methods<M: UserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method("type", |_, this, ()| Ok(this.0.clone()));
+    }
+}
+
+fn symlink_status(_: &Lua, path: LuaFilePath) -> LuaResult<SymlinkStatus> {
+    let metadata = std::fs::symlink_metadata(&path.path)?;
+
+    let file_type = if metadata.file_type().is_symlink() {
+        "symlink".to_string()
+    } else if metadata.file_type().is_file() {
+        "file".to_string()
+    } else if metadata.file_type().is_dir() {
+        "directory".to_string()
+    } else {
+        "unknown".to_string()
+    };
+
+    Ok(SymlinkStatus::new(file_type))
+}
 
 pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
     let exports = lua.create_table()?;
@@ -354,18 +391,22 @@ pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
         "temp_directory_path",
         lua.create_function(temp_directory_path)?,
     )?;
-    exports.set("pairs", lua.create_function(|lua, path: LuaFilePath| -> LuaResult<_> {
-        let table = lua.create_table()?;
-        for entry in std::fs::read_dir(&path.path)? {
-            let entry = entry?;
-            let path = entry.path();
-            let path = LuaFilePath::new(path.to_str().unwrap_or("").to_string());
-            table.set(path.clone(), true)?;
-        }
-        let next = lua.globals().get::<mlua::Function>("next").unwrap();
-        Ok((next, table, mlua::Nil))
-    })?)?;
-    // exports.set("pairs_r", lua.create_function(pairs_r_ctor)?)?;
+    exports.set(
+        "pairs",
+        lua.create_function(|lua, path: LuaFilePath| -> LuaResult<_> {
+            let table = lua.create_table()?;
+            for entry in std::fs::read_dir(&path.path)? {
+                let entry = entry?;
+                let path = entry.path();
+                let path = LuaFilePath::new(path.to_str().unwrap_or("").to_string());
+                table.set(path.clone(), true)?;
+            }
+            let next = lua.globals().get::<mlua::Function>("next").unwrap();
+            Ok((next, table, mlua::Nil))
+        })?,
+    )?;
+    exports.set("fullpath", lua.create_function(full_path)?)?;
+    exports.set("symlink_status", lua.create_function(symlink_status)?)?;
 
     Ok(exports)
 }
