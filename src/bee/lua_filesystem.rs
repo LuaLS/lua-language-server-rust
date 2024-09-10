@@ -162,30 +162,30 @@ fn path_constructor(_: &Lua, path: String) -> LuaResult<LuaFilePath> {
     Ok(LuaFilePath::new(path))
 }
 
-fn status(_: &Lua, path: String) -> LuaResult<()> {
+fn status(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
     let _ = path;
     // Implementation for status function
     Ok(())
 }
 
-fn exists(_: &Lua, path: String) -> LuaResult<bool> {
-    Ok(std::path::Path::new(&path).exists())
+fn exists(_: &Lua, path: LuaFilePath) -> LuaResult<bool> {
+    Ok(std::path::Path::new(&path.path).exists())
 }
 
-fn is_directory(_: &Lua, path: String) -> LuaResult<bool> {
-    Ok(std::path::Path::new(&path).is_dir())
+fn is_directory(_: &Lua, path: LuaFilePath) -> LuaResult<bool> {
+    Ok(std::path::Path::new(&path.path).is_dir())
 }
 
-fn is_regular_file(_: &Lua, path: String) -> LuaResult<bool> {
-    Ok(std::path::Path::new(&path).is_file())
+fn is_regular_file(_: &Lua, path: LuaFilePath) -> LuaResult<bool> {
+    Ok(std::path::Path::new(&path.path).is_file())
 }
 
-fn file_size(_: &Lua, path: String) -> LuaResult<u64> {
-    Ok(std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0))
+fn file_size(_: &Lua, path: LuaFilePath) -> LuaResult<u64> {
+    Ok(std::fs::metadata(&path.path).map(|m| m.len()).unwrap_or(0))
 }
 
-fn create_directory(_: &Lua, path: String) -> LuaResult<()> {
-    std::fs::create_dir(&path)?;
+fn create_directory(_: &Lua, path: LuaFilePath) -> LuaResult<()> {
+    std::fs::create_dir(&path.path)?;
     Ok(())
 }
 
@@ -354,7 +354,17 @@ pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
         "temp_directory_path",
         lua.create_function(temp_directory_path)?,
     )?;
-    // exports.set("pairs", lua.create_function(pairs_ctor)?)?;
+    exports.set("pairs", lua.create_function(|lua, path: LuaFilePath| -> LuaResult<_> {
+        let table = lua.create_table()?;
+        for entry in std::fs::read_dir(&path.path)? {
+            let entry = entry?;
+            let path = entry.path();
+            let path = LuaFilePath::new(path.to_str().unwrap_or("").to_string());
+            table.set(path.clone(), true)?;
+        }
+        let next = lua.globals().get::<mlua::Function>("next").unwrap();
+        Ok((next, table, mlua::Nil))
+    })?)?;
     // exports.set("pairs_r", lua.create_function(pairs_r_ctor)?)?;
 
     Ok(exports)

@@ -88,12 +88,12 @@ impl UserData for LuaChannel {
             Ok(())
         });
 
-        methods.add_async_method("pop", |lua, this, ()| async move {
+        methods.add_method("pop", |lua, this, ()| {
             let id = this.id;
             let opt_receiver = { ChannelMgr.lock().unwrap().get_receiver(id) };
             if let Some(receiver) = opt_receiver {
-                let data = receiver.lock().unwrap().recv().await;
-                if let Some(data) = data {
+                let data = receiver.lock().unwrap().try_recv();
+                if let Ok(data) = data {
                     let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
                     let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
                     returns.insert(0, mlua::Value::Boolean(true));

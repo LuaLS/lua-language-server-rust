@@ -1,6 +1,7 @@
 use mlua::{lua_State, prelude::*}; 
 use crate::bee;
 use crate::lua_seri;
+use crate::override_lua;
 
 extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
@@ -49,6 +50,8 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
 
     // lua_seri
     lua_seri::register_lua_seri(&lua)?;
+
+    // override
 
     add_package_path(
         &lua,
