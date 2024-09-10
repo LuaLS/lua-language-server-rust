@@ -10,8 +10,13 @@ fn bee_time_time(_: &Lua, _: ()) -> LuaResult<i64> {
     Ok(timestamp)
 }
 
+lazy_static! {
+    static ref START_TIME: Instant = Instant::now();
+}
+
 fn bee_time_monotonic(_: &Lua, _: ()) -> LuaResult<i64> {
-    let duration = Instant::now().elapsed();
+    // 获取当前时间与起始时间的差值
+    let duration = START_TIME.elapsed();
     let timestamp = duration.as_millis() as i64;
     Ok(timestamp)
 }
