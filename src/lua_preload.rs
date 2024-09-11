@@ -5,12 +5,18 @@ use mlua::{lua_State, prelude::*};
 
 extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
+
+    fn luaopen_code_format(lua: *mut lua_State) -> i32;
 }
 
 pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     // lpeglabel
     let lpeglabel_loader = unsafe { lua.create_c_function(luaopen_lpeglabel) }.unwrap();
     add_preload_module(&lua, "lpeglabel", lpeglabel_loader)?;
+    // code_format
+    let code_format_loader = unsafe { lua.create_c_function(luaopen_code_format) }.unwrap();
+    add_preload_module(&lua, "code_format", code_format_loader)?;
+
     // bee.platform
     let bee_platform_loader =
         lua.create_function(|lua: &Lua, ()| Ok(bee::lua_platform::bee_platform(lua)))?;
@@ -56,7 +62,7 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
         &lua,
         "resources/?.lua;resources/?/init.lua;resources/script/?.lua;resources/script/?/init.lua",
     )?;
-    
+
     Ok(())
 }
 

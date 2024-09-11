@@ -1,3 +1,6 @@
 [submodule "3rd/lpeglabel"]
 	path = 3rd/lpeglabel
 	url = https://github.com/sqmedeiros/lpeglabel
+[submodule "3rd/EmmyLuaCodeStyle"]
+	path = 3rd/EmmyLuaCodeStyle
+	url = https://github.com/CppCXY/EmmyLuaCodeStyle.git
