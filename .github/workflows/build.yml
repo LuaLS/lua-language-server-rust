@@ -50,6 +50,7 @@ jobs:
       - name: package-unix
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
+          ls -R target
           cp target/${{ matrix.target }}/release/lua-language-server ${{ github.workspace }}/artifact/
           cp resources ${{ github.workspace }}/artifact/ -r
       - name: package-windows
