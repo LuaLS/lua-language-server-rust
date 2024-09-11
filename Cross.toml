@@ -1,6 +1,0 @@
-[target.aarch64-unknown-linux-gnu]
-image = "rustembedded/cross:aarch64-unknown-linux-gnu-0.2.1"
-
-[target.aarch64-unknown-linux-gnu.env]
-CXXFLAGS = "-std=c++17"
-
