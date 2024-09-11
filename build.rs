@@ -1,5 +1,9 @@
 fn main() {
     std::env::set_var("CC_LOG", "1");
+    if cfg!(target_arch = "aarch64") {
+        std::env::set_var("CC", "aarch64-linux-gnu-gcc");
+        std::env::set_var("CXX", "aarch64-linux-gnu-g++");
+    }
 
     build_lua();
     build_lua_seri();
@@ -113,8 +117,7 @@ fn build_emmyluacodestyle() {
     if cfg!(windows) {
         builder.flag("/utf-8");
         builder.flag("/std:c++17");
-    }
-    else {
+    } else {
         builder.flag("-std=c++17");
     }
 

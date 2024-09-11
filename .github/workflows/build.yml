@@ -43,9 +43,6 @@ jobs:
           cross build --release --target ${{ matrix.target }} --target-dir target/${{ matrix.platform }}
       - name: Build - aarch64
         if: ${{ matrix.cross == 'aarch64' }}
-        env:
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross g++-aarch64-linux-gnu
