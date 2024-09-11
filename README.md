@@ -4,14 +4,14 @@ This project is currently a work in progress. It is an exploration of using Rust
 
 # Build Support
 
-[x] win32-x64
-[x] win32-ia32
-[ ] linux-arm64 
-[x] linux-x64
-[x] linux-musl
-[ ] linux-bsd
-[x] darwin-x64
-[x] darwin-arm64
+- [x] win32-x64
+- [x] win32-ia32
+- [ ] linux-aarch64 
+- [x] linux-x64
+- [x] linux-musl
+- [ ] linux-bsd
+- [x] darwin-x64
+- [x] darwin-arm64
 
 # Build
 
