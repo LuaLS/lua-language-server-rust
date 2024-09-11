@@ -1,10 +1,48 @@
+use std::{env, process::Command};
+
 fn main() {
     std::env::set_var("CC_LOG", "1");
+    if cfg!(target_os = "linux") && cfg!(target_arch = "aarch64") {
+        std::env::set_var("CC", "aarch64-linux-gnu-gcc");
+        std::env::set_var("CXX", "aarch64-linux-gnu-g++");
+        print_compiler_version();
+    }
+
     build_lua();
     build_lua_seri();
     build_lpeglabel();
     cfg!(windows).then(|| build_setfilemode());
     build_emmyluacodestyle();
+}
+
+fn print_compiler_version() {
+    if cfg!(target_os = "linux") {
+        let cc = env::var("CC").unwrap_or_else(|_| {
+            "gcc".to_string()
+        });
+
+        let cc_version = Command::new(&cc)
+            .arg("--version")
+            .output()
+            .expect("Failed to execute CC command");
+        println!(
+            "CC version:\n{}",
+            String::from_utf8_lossy(&cc_version.stdout)
+        );
+
+        let cxx = env::var("CXX").unwrap_or_else(|_| {
+            "g++".to_string()
+        });
+
+        let cxx_version = Command::new(&cxx)
+            .arg("--version")
+            .output()
+            .expect("Failed to execute CXX command");
+        println!(
+            "CXX version:\n{}",
+            String::from_utf8_lossy(&cxx_version.stdout)
+        );
+    }
 }
 
 fn build_lua() {
