@@ -49,7 +49,7 @@ local currentPath = debug.getinfo(1, 'S').source:sub(2)
 local rootPath    = currentPath:gsub('[/\\]*[^/\\]-$', '')
 
 rootPath = (rootPath == '' and '.' or rootPath)
-ROOT     = fs.path(util.expandPath(rootPath))
+ROOT     = fs.absolute(util.expandPath(rootPath))
 LOGPATH  = LOGPATH  and util.expandPath(LOGPATH)  or (ROOT:string() .. '/log')
 METAPATH = METAPATH and util.expandPath(METAPATH) or (ROOT:string() .. '/meta')
 

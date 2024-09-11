@@ -1,15 +1,14 @@
 mod bee;
-mod lua_seri;
 mod lua_preload;
+mod lua_seri;
 mod override_lua;
 
 #[macro_use]
 extern crate lazy_static;
 
-use std::{env, io, path};
+use std::{env, path};
 
-use mlua::{lua_State, prelude::*};
-
+use mlua::prelude::*;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> LuaResult<()> {

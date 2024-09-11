@@ -1,12 +1,11 @@
-use mlua::{lua_State, prelude::*}; 
 use crate::bee;
 use crate::lua_seri;
 use crate::override_lua;
+use mlua::{lua_State, prelude::*};
 
 extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
 }
-
 
 pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     // lpeglabel
@@ -57,7 +56,7 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
         &lua,
         "resources/?.lua;resources/?/init.lua;resources/script/?.lua;resources/script/?/init.lua",
     )?;
-
+    
     Ok(())
 }
 

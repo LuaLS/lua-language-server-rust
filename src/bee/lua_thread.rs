@@ -14,11 +14,23 @@ use tokio::sync::mpsc;
 pub struct LuaChannel {
     name: String,
     id: i64,
+    pub receiver: Arc<Mutex<mpsc::Receiver<i64>>>,
+    pub sender: Arc<Mutex<mpsc::Sender<i64>>>,
 }
 
 impl LuaChannel {
-    fn new(name: String, id: i64) -> LuaChannel {
-        LuaChannel { name, id }
+    fn new(
+        name: String,
+        id: i64,
+        receiver: Arc<Mutex<mpsc::Receiver<i64>>>,
+        sender: Arc<Mutex<mpsc::Sender<i64>>>,
+    ) -> LuaChannel {
+        LuaChannel {
+            name,
+            id,
+            receiver,
+            sender,
+        }
     }
 
     pub fn mt_string(&self) -> String {
@@ -28,8 +40,6 @@ impl LuaChannel {
 
 pub struct LuaChannelMgr {
     channels: HashMap<String, LuaChannel>,
-    receivers: HashMap<i64, Arc<Mutex<mpsc::Receiver<i64>>>>,
-    senders: HashMap<i64, Arc<Mutex<mpsc::Sender<i64>>>>,
     id_counter: i64,
 }
 
@@ -37,8 +47,6 @@ impl LuaChannelMgr {
     pub fn new() -> LuaChannelMgr {
         LuaChannelMgr {
             channels: HashMap::new(),
-            receivers: HashMap::new(),
-            senders: HashMap::new(),
             id_counter: 0,
         }
     }
@@ -47,22 +55,17 @@ impl LuaChannelMgr {
         let (sender, receiver) = mpsc::channel(100);
         let id = self.id_counter;
         self.id_counter += 1;
-        let channel = LuaChannel::new(name.clone(), id);
+        let channel = LuaChannel::new(
+            name.clone(),
+            id,
+            Arc::new(Mutex::new(receiver)),
+            Arc::new(Mutex::new(sender)),
+        );
         self.channels.insert(name.clone(), channel);
-        self.receivers.insert(id, Arc::new(Mutex::new(receiver)));
-        self.senders.insert(id, Arc::new(Mutex::new(sender)));
     }
 
     pub fn get_channel(&self, name: &str) -> Option<LuaChannel> {
         self.channels.get(name).cloned()
-    }
-
-    pub fn get_sender(&self, id: i64) -> Option<Arc<Mutex<mpsc::Sender<i64>>>> {
-        self.senders.get(&id).cloned()
-    }
-
-    pub fn get_receiver(&self, id: i64) -> Option<Arc<Mutex<mpsc::Receiver<i64>>>> {
-        self.receivers.get(&id).cloned()
     }
 }
 
@@ -77,28 +80,20 @@ impl UserData for LuaChannel {
         });
 
         methods.add_async_method("push", |lua, this, args: mlua::MultiValue| async move {
-            let id = this.id;
             let lua_seri_pack = lua.globals().get::<LuaFunction>("lua_seri_pack")?;
             let ptr = lua_seri_pack.call::<i64>(args).unwrap();
-            let opt_sender = { ChannelMgr.lock().unwrap().get_sender(id) };
-            if let Some(sender) = opt_sender {
-                let sender = sender.lock().unwrap();
-                sender.send(ptr).await.unwrap();
-            }
+            let sender = this.sender.lock().unwrap();
+            sender.send(ptr).await.unwrap();
             Ok(())
         });
 
         methods.add_method("pop", |lua, this, ()| {
-            let id = this.id;
-            let opt_receiver = { ChannelMgr.lock().unwrap().get_receiver(id) };
-            if let Some(receiver) = opt_receiver {
-                let data = receiver.lock().unwrap().try_recv();
-                if let Ok(data) = data {
-                    let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
-                    let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
-                    returns.insert(0, mlua::Value::Boolean(true));
-                    return Ok(returns);
-                }
+            let data = this.receiver.lock().unwrap().try_recv();
+            if let Ok(data) = data {
+                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                let mut returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
+                returns.insert(0, mlua::Value::Boolean(true));
+                return Ok(returns);
             }
 
             let mut returns = mlua::MultiValue::new();
@@ -107,15 +102,11 @@ impl UserData for LuaChannel {
         });
 
         methods.add_async_method("bpop", |lua, this, ()| async move {
-            let id = this.id;
-            let opt_receiver = { ChannelMgr.lock().unwrap().get_receiver(id) };
-            if let Some(receiver) = opt_receiver {
-                let data = receiver.lock().unwrap().recv().await;
-                if let Some(data) = data {
-                    let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
-                    let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
-                    return Ok(returns);
-                }
+            let data = { this.receiver.lock().unwrap().recv().await };
+            if let Some(data) = data {
+                let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
+                let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
+                return Ok(returns);
             }
 
             let returns = mlua::MultiValue::new();
