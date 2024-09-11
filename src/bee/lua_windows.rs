@@ -56,7 +56,8 @@ fn bee_windows_a2u(_: &Lua, text: String) -> LuaResult<String> {
 }
 
 fn set_stdio_to_binary() -> io::Result<()> {
-   if cfg!(windows) {
+    #[cfg(windows)]
+    {
         windows::set_stdio_to_binary()?;
     }
     Ok(())

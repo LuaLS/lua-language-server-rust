@@ -88,7 +88,7 @@ impl LuaSocket {
             }
             #[cfg(unix)]
             SocketType::Unix => {
-                let listener = UnixListener::bind(addr).await?;
+                let listener = UnixListener::bind(addr)?;
                 let stream = SocketStream::UnixListener(listener);
                 SOCKET_POOL
                     .lock()
