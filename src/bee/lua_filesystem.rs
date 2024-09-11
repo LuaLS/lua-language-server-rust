@@ -103,6 +103,10 @@ impl LuaFilePath {
     pub fn mt_eq(&self, rhs: &LuaFilePath) -> bool {
         self.path == rhs.path
     }
+
+    pub fn to_path(&self) -> path::PathBuf {
+        path::PathBuf::from(&self.path)
+    }
 }
 
 impl UserData for LuaFilePath {
