@@ -50,14 +50,13 @@ jobs:
       - name: package-unix
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
-          ls -R target
-          cp target/${{ matrix.target }}/release/lua-language-server ${{ github.workspace }}/artifact/
-          cp resources ${{ github.workspace }}/artifact/ -r
+          cp ${{ github.workspace }}/target/${{ matrix.target }}/release/lua-language-server ${{ github.workspace }}/artifact/
+          cp ${{ github.workspace }}/resources ${{ github.workspace }}/artifact/ -r
       - name: package-windows
         if: ${{ matrix.os == 'windows-latest'  }}
         run: |
-          powershell -Command "Copy-Item -Path target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\"
-          powershell -Command "Copy-Item -Path resources -Destination ${{ github.workspace }}\artifact\ -Recurse"
+          powershell -Command "Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\"
+          powershell -Command "Copy-Item -Path ${{ github.workspace }}\resources -Destination ${{ github.workspace }}\artifact\ -Recurse"
       - name: Upload
         uses: actions/upload-artifact@v3
         with: 
