@@ -1,4 +1,5 @@
 use crate::bee;
+use crate::codestyle::fake_code_style;
 use crate::lua_seri;
 use crate::override_lua;
 use mlua::{lua_State, prelude::*};
@@ -6,6 +7,7 @@ use mlua::{lua_State, prelude::*};
 extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
 
+    #[cfg(not(feature = "no_format"))]
     fn luaopen_code_format(lua: *mut lua_State) -> i32;
 }
 
@@ -14,8 +16,16 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     let lpeglabel_loader = unsafe { lua.create_c_function(luaopen_lpeglabel) }.unwrap();
     add_preload_module(&lua, "lpeglabel", lpeglabel_loader)?;
     // code_format
-    let code_format_loader = unsafe { lua.create_c_function(luaopen_code_format) }.unwrap();
-    add_preload_module(&lua, "code_format", code_format_loader)?;
+    #[cfg(feature = "no_format")]
+    {
+        let code_format_loader = lua.create_function(|lua: &Lua, ()| Ok(fake_code_style(lua)))?;
+        add_preload_module(&lua, "code_format", code_format_loader)?;
+    }
+    #[cfg(not(feature = "no_format"))]
+    {
+        let code_format_loader = unsafe { lua.create_c_function(luaopen_code_format) }?;
+        add_preload_module(&lua, "code_format", code_format_loader)?;
+    }
 
     // bee.platform
     let bee_platform_loader =

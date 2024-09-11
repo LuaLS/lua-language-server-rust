@@ -2,6 +2,7 @@ mod bee;
 mod lua_preload;
 mod lua_seri;
 mod override_lua;
+mod codestyle;
 
 
 #[macro_use]

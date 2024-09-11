@@ -4,9 +4,8 @@ fn main() {
     build_lua_seri();
     build_lpeglabel();
     cfg!(windows).then(|| build_setfilemode());
-    build_emmyluacodestyle();
+    cfg!(not(feature = "no_format")).then(|| build_emmyluacodestyle());
 }
-
 
 fn build_lua() {
     cc::Build::new()
