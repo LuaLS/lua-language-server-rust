@@ -32,17 +32,17 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       - name: Build - General
-        if: ${{ matrix.cross == general }}
+        if: ${{ matrix.cross == 'general' }}
         run: |
           rustup target add ${{ matrix.target }}
           cargo build --release --target ${{ matrix.target }} --target-dir target/${{ matrix.platform }}
       - name: Build - musl
-        if: ${{ matrix.cross == musl }}
+        if: ${{ matrix.cross == 'musl' }}
         run: |
           cargo install cross
           cross build --release --target ${{ matrix.target }} --target-dir target/${{ matrix.platform }}
       - name: Build - aarch64
-        if: ${{ matrix.cross == aarch64 }}
+        if: ${{ matrix.cross == 'aarch64' }}
         env:
           CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
           CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
