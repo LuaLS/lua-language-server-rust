@@ -17,9 +17,9 @@ jobs:
       matrix:
         include:
           - { os: ubuntu-20.04,   target: x86_64-unknown-linux-gnu,   platform: linux-x64,    cross: general }
-          - { os: ubuntu-22.04,   target: aarch64-unknown-linux-gnu,  platform: linux-arm64,  cross: aarch }
+          # - { os: ubuntu-22.04,   target: aarch64-unknown-linux-gnu,  platform: linux-arm64,  cross: aarch64 }
           - { os: ubuntu-20.04,   target: x86_64-unknown-linux-musl,  platform: linux-musl,   cross: cross }
-          - { os: ubuntu-22.04,   target: x86_64-unknown-freebsd,     platform: linux-bsd,    cross: bsd }
+          # - { os: ubuntu-22.04,   target: x86_64-unknown-freebsd,     platform: linux-bsd,    cross: bsd }
           - { os: macos-latest,   target: x86_64-apple-darwin,        platform: darwin-x64,   cross: general }
           - { os: macos-latest,   target: aarch64-apple-darwin,       platform: darwin-arm64, cross: general }
           - { os: windows-latest, target: x86_64-pc-windows-msvc,     platform: win32-x64,    cross: general }
@@ -44,12 +44,12 @@ jobs:
       - name: package-unix
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
-          cp target/${{ matrix.platform }}/release/lua-language-server ${{ github.workspace }}/artifact/
+          cp target/${{ matrix.target }}/release/lua-language-server ${{ github.workspace }}/artifact/
           cp resources ${{ github.workspace }}/artifact/ -r
       - name: package-windows
-        if: ${{ matrix.os == 'windows-latest' }}
+        if: ${{ matrix.os == 'windows-latest'  }}
         run: |
-          powershell -Command "Copy-Item -Path target\${{ matrix.platform }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\"
+          powershell -Command "Copy-Item -Path target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\"
           powershell -Command "Copy-Item -Path resources -Destination ${{ github.workspace }}\artifact\ -Recurse"
       - name: Upload
         uses: actions/upload-artifact@v3
