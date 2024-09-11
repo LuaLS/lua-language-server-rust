@@ -6,12 +6,14 @@ This project is currently a work in progress. It is an exploration of using Rust
 
 - [x] win32-x64
 - [x] win32-ia32
-- [ ] linux-aarch64 
+- [x] linux-aarch64  not format 
 - [x] linux-x64
 - [x] linux-musl
-- [ ] linux-bsd
+- [x] linux-bsd  not format 
 - [x] darwin-x64
 - [x] darwin-arm64
+
+NOTE: The linux-aarch64 and linux-bsd are not format, because there are some build problems.
 
 # Build
 
