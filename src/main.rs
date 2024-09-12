@@ -7,9 +7,7 @@ mod codestyle;
 
 #[macro_use]
 extern crate lazy_static;
-
 use std::{env, path};
-
 use mlua::prelude::*;
 
 #[tokio::main(flavor = "current_thread")]

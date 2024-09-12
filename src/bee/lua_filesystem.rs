@@ -236,7 +236,6 @@ fn copy_file(_: &Lua, (source, destination): (LuaFilePath, LuaFilePath)) -> LuaR
 
 fn absolute(_: &Lua, path: LuaFilePath) -> LuaResult<LuaFilePath> {
     let canonical_path = std::fs::canonicalize(&path.path)?;
-
     let full_path_str = canonical_path.to_str().unwrap_or("").to_string();
 
     // 移除 \\?\ 前缀
@@ -360,6 +359,35 @@ fn symlink_status(_: &Lua, path: LuaFilePath) -> LuaResult<SymlinkStatus> {
     Ok(SymlinkStatus::new(file_type))
 }
 
+fn pairs(lua: &Lua, path: LuaFilePath) -> LuaResult<(mlua::Function, mlua::Table, mlua::Value)> {
+    let table = lua.create_table()?;
+    if let Ok(_) = std::fs::exists(&path.path) {
+        for entry in std::fs::read_dir(&path.path)? {
+            let entry = entry?;
+            let path = entry.path();
+            let path = LuaFilePath::new(path.to_str().unwrap_or("").to_string());
+            let file_type = match std::fs::symlink_metadata(&path.path) {
+                Ok(metadata) => {
+                    if metadata.file_type().is_symlink() {
+                        "symlink".to_string()
+                    } else if metadata.file_type().is_file() {
+                        "file".to_string()
+                    } else if metadata.file_type().is_dir() {
+                        "directory".to_string()
+                    } else {
+                        "unknown".to_string()
+                    }
+                }
+                Err(_) => "unknown".to_string(),
+            };
+            let file_status = SymlinkStatus::new(file_type);
+            table.set(path.clone(), file_status)?;
+        }
+    }
+    let next = lua.globals().get::<mlua::Function>("next").unwrap();
+    Ok((next, table, mlua::Nil))
+}
+
 pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
     let exports = lua.create_table()?;
 
@@ -397,17 +425,7 @@ pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
     )?;
     exports.set(
         "pairs",
-        lua.create_function(|lua, path: LuaFilePath| -> LuaResult<_> {
-            let table = lua.create_table()?;
-            for entry in std::fs::read_dir(&path.path)? {
-                let entry = entry?;
-                let path = entry.path();
-                let path = LuaFilePath::new(path.to_str().unwrap_or("").to_string());
-                table.set(path.clone(), true)?;
-            }
-            let next = lua.globals().get::<mlua::Function>("next").unwrap();
-            Ok((next, table, mlua::Nil))
-        })?,
+        lua.create_function(pairs)?,
     )?;
     exports.set("fullpath", lua.create_function(full_path)?)?;
     exports.set("symlink_status", lua.create_function(symlink_status)?)?;

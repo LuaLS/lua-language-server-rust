@@ -1,9 +1,11 @@
 use mlua::Lua;
 
+#[allow(unused)]
 fn not_implement(_: &Lua, _: mlua::MultiValue) -> mlua::Result<(bool, String)> {
     Ok((false, "not implement".to_string()))
 }
 
+#[allow(unused)]
 pub fn fake_code_style(lua: &Lua) -> mlua::Result<mlua::Table> {
     let table = lua.create_table()?;
     table.set("format", lua.create_function(not_implement)?)?;

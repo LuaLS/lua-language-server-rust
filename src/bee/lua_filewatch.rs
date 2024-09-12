@@ -2,7 +2,7 @@ use mlua::prelude::LuaResult;
 use mlua::prelude::*;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
 // use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver};
 
 use super::lua_filesystem::LuaFilePath;
 // use std::time::Duration;
@@ -43,11 +43,18 @@ impl LuaFileWatch {
         if let Some(rx) = &self.receiver {
             if let Ok(event) = rx.try_recv() {
                 let path = event.paths[0].to_str().unwrap().to_string();
+                if let Some(filter) = &self.filter {
+                    if let Ok(result) = filter.call::<bool>(path.clone()) {
+                        if !result {
+                            return Ok((mlua::Nil, mlua::Nil));
+                        }
+                    }
+                }
                 let kind = match event.kind {
                     notify::EventKind::Create(_) => "create",
                     notify::EventKind::Modify(_) => "modify",
                     notify::EventKind::Remove(_) => "remove",
-                    _ => "unknown"
+                    _ => "unknown",
                 };
 
                 return Ok((kind.into_lua(lua).unwrap(), path.into_lua(lua).unwrap()));
