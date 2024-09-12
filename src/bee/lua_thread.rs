@@ -8,7 +8,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 use tokio::runtime::Builder;
-use tokio::sync::mpsc;
+use std::sync::mpsc;
 
 #[derive(Clone, Debug)]
 pub struct LuaChannel {
@@ -34,7 +34,7 @@ impl LuaChannel {
     }
 
     pub fn mt_string(&self) -> String {
-        format!("Channel: {}", self.name.clone())
+        format!("Channel: {} {}", self.name.clone(), self.id)
     }
 }
 
@@ -52,7 +52,7 @@ impl LuaChannelMgr {
     }
 
     pub fn new_channel(&mut self, name: String) {
-        let (sender, receiver) = mpsc::channel(100);
+        let (sender, receiver) = mpsc::channel();
         let id = self.id_counter;
         self.id_counter += 1;
         let channel = LuaChannel::new(
@@ -79,11 +79,11 @@ impl UserData for LuaChannel {
             Ok(this.mt_string())
         });
 
-        methods.add_async_method("push", |lua, this, args: mlua::MultiValue| async move {
+        methods.add_method("push", move|lua, this, args: mlua::MultiValue| {
             let lua_seri_pack = lua.globals().get::<LuaFunction>("lua_seri_pack")?;
             let ptr = lua_seri_pack.call::<i64>(args).unwrap();
             let sender = this.sender.lock().unwrap();
-            sender.send(ptr).await.unwrap();
+            sender.send(ptr).unwrap();
             Ok(())
         });
 
@@ -101,9 +101,9 @@ impl UserData for LuaChannel {
             Ok(returns)
         });
 
-        methods.add_async_method("bpop", |lua, this, ()| async move {
-            let data = { this.receiver.lock().unwrap().recv().await };
-            if let Some(data) = data {
+        methods.add_method("bpop", move|lua, this, ()| {
+            let data = this.receiver.lock().unwrap().recv();
+            if let Ok(data) = data { 
                 let lua_seri_unpack = lua.globals().get::<LuaFunction>("lua_seri_unpack")?;
                 let returns = lua_seri_unpack.call::<mlua::MultiValue>(data).unwrap();
                 return Ok(returns);
