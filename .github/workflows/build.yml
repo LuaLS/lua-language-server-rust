@@ -65,3 +65,53 @@ jobs:
         with: 
           name: lua-language-server-${{ matrix.platform }}
           path: ${{ github.workspace }}/artifact/
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifact
+      - name: zip windows package win32-x64
+        uses: TheDoctor0/zip-release@v0.2.1
+        with:
+          filename: lua-language-server-win32-x64.zip
+          path: ./artifact/lua-language-server-win32-x64
+      - name: zip windows package win32-ia32
+        uses: TheDoctor0/zip-release@v0.2.1
+        with:
+          filename: lua-language-server-win32-ia32.zip
+          path: ./artifact/lua-language-server-win32-ia32
+      - name: tar unix
+        run: |
+          chmod +x ./artifact/lua-language-server-linux-x64/lua-language-server
+          tar -czf lua-language-server-linux-x64.tar.gz -C ./artifact lua-language-server-linux-x64
+          chmod +x ./artifact/lua-language-server-linux-arm64/lua-language-server
+          tar -czf lua-language-server-linux-aarch64.tar.gz -C ./artifact lua-language-server-linux-arm64
+          chmod +x ./artifact/lua-language-server-linux-musl/lua-language-server
+          tar -czf lua-language-server-linux-musl.tar.gz -C ./artifact lua-language-server-linux-musl
+          chmod +x ./artifact/lua-language-server-linux-bsd/lua-language-server
+          tar -czf lua-language-server-linux-bsd.tar.gz -C ./artifact lua-language-server-linux-bsd
+          chmod +x ./artifact/lua-language-server-darwin-x64/lua-language-server
+          tar -czf lua-language-server-darwin-x64.tar.gz -C ./artifact lua-language-server-darwin-x64
+          chmod +x ./artifact/lua-language-server-darwin-arm64/lua-language-server
+          tar -czf lua-language-server-darwin-arm64.tar.gz -C ./artifact lua-language-server-darwin-arm64
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with: 
+          name: lua-language-server
+          draft: false
+          generate_release_notes: true
+          files: |
+            lua-language-server-win32-x64.zip
+            lua-language-server-win32-ia32.zip
+            lua-language-server-linux-x64.tar.gz
+            lua-language-server-linux-aarch64.tar.gz
+            lua-language-server-linux-musl.tar.gz
+            lua-language-server-linux-bsd.tar.gz
+            lua-language-server-darwin-x64.tar.gz
+            lua-language-server-darwin-arm64.tar.gz
+          token: ${{ secrets.RELEASE }}
+          
