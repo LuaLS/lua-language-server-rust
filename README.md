@@ -1,6 +1,6 @@
-# Project Status
+# Lua Language Server Rust Port
 
-This project is currently a work in progress. It is an exploration of using Rust as a host.
+This is a Rust port of the Lua Language Server. Not all code is implemented in Rust; only the host program has been rewritten in Rust, while some C code is still used. The main goal of this port is to ensure compatibility with more platforms.
 
 # Build Support
 
