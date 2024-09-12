@@ -24,3 +24,4 @@ path = "src/main.rs"
 
 [features]
 no_format = []
+

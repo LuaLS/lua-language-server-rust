@@ -1,12 +1,7 @@
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
-use std::borrow::BorrowMut;
-// use std::cell::RefCell;
 use std::collections::HashMap;
-// use std::rc::Rc;
-// use std::result;
 use tokio::select;
-
 use super::lua_socket::LuaSocket;
 use super::lua_socket_pool::SOCKET_POOL;
 

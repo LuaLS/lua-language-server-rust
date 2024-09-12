@@ -1,12 +1,13 @@
 fn main() {
     std::env::set_var("CC_LOG", "1");
-    build_lua();
+    // build_lua();
     build_lua_seri();
     build_lpeglabel();
     cfg!(windows).then(|| build_setfilemode());
     cfg!(not(feature = "no_format")).then(|| build_emmyluacodestyle());
 }
 
+#[allow(unused)]
 fn build_lua() {
     cc::Build::new()
         .include("3rd/lua")

@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::io;
 use std::sync::Arc;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{TcpListener, TcpStream};
 #[cfg(unix)]
 use tokio::net::{UnixListener, UnixStream};
 use tokio::sync::Mutex;
@@ -32,6 +30,7 @@ impl LuaSocketPool {
         self.socket_stream_pool.insert(fd, socket_stream);
     }
 
+    #[allow(unused)]
     pub fn remove_socket_stream(&mut self, fd: i32) {
         self.socket_stream_pool.remove(&fd);
     }

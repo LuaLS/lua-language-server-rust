@@ -1,12 +1,9 @@
 use mlua::prelude::LuaResult;
 use mlua::prelude::*;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-// use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver};
-
 use super::lua_filesystem::LuaFilePath;
-// use std::time::Duration;
-// use tokio::task;
+
 
 struct LuaFileWatch {
     watcher: Option<RecommendedWatcher>,

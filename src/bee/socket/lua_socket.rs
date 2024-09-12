@@ -8,6 +8,7 @@ use tokio::net::{UnixListener, UnixStream};
 use super::lua_socket_pool::SOCKET_POOL;
 
 pub enum SocketStream {
+    #[allow(unused)]
     None,
     Tcp(TcpStream),
     TcpListener(TcpListener),
@@ -19,6 +20,7 @@ pub enum SocketStream {
 
 pub enum SocketStreamData {
     Socket(LuaSocket),
+    #[allow(unused)]
     None,
 }
 
