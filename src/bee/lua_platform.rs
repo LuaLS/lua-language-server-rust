@@ -35,32 +35,6 @@ pub fn bee_platform(lua: &Lua) -> LuaResult<LuaTable> {
     };
     exports.set("os", os_name)?;
 
-    // // 设置编译器信息
-    // let (compiler, compiler_version) = if cfg!(target_env = "msvc") {
-    //     ("msvc", format!("MSVC {}", env!("VC_REVISION")))
-    // } else if cfg!(target_env = "gnu") {
-    //     ("gcc", format!("GCC {}.{}.{}", env!("CARGO_CFG_GNUC_VERSION_MAJOR"), env!("CARGO_CFG_GNUC_VERSION_MINOR"), env!("CARGO_CFG_GNUC_VERSION_PATCH")))
-    // } else if cfg!(target_env = "clang") {
-    //     ("clang", format!("Clang {}.{}.{}", env!("CARGO_CFG_CLANG_VERSION_MAJOR"), env!("CARGO_CFG_CLANG_VERSION_MINOR"), env!("CARGO_CFG_CLANG_VERSION_PATCH")))
-    // } else {
-    //     ("unknown", "unknown".to_string())
-    // };
-    // exports.set("Compiler", compiler)?;
-    // exports.set("CompilerVersion", compiler_version)?;
-
-    // // 设置 C 运行时库信息
-    // let (crt, crt_version) = if cfg!(target_env = "msvc") {
-    //     ("msvc", format!("MSVC STL {}", env!("CARGO_CFG_MSC_VER")))
-    // } else if cfg!(target_env = "gnu") {
-    //     ("libstdc++", format!("libstdc++ {}", env!("CARGO_CFG_GLIBCXX_VERSION")))
-    // } else if cfg!(target_env = "musl") {
-    //     ("musl", format!("musl {}", env!("CARGO_CFG_MUSL_VERSION")))
-    // } else {
-    //     ("unknown", "unknown".to_string())
-    // };
-    // exports.set("CRT", crt)?;
-    // exports.set("CRTVersion", crt_version)?;
-
     // 设置架构信息
     let arch = if cfg!(target_arch = "x86") {
         "x86"

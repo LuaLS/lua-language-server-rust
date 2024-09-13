@@ -1,14 +1,13 @@
 mod bee;
+mod codestyle;
 mod lua_preload;
 mod lua_seri;
 mod override_lua;
-mod codestyle;
-
 
 #[macro_use]
 extern crate lazy_static;
-use std::{env, path};
 use mlua::prelude::*;
+use std::{env, path};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> LuaResult<()> {
@@ -37,4 +36,24 @@ fn build_args(lua: &Lua) {
     let exe_path = env::current_exe().unwrap();
     table.set(-1, exe_path.to_str().unwrap()).unwrap();
     lua.globals().set("arg", table).unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use tokio::runtime::Builder;
+
+    use super::*;
+    #[test]
+    fn test_main() {
+        let rt = Builder::new_current_thread().enable_all().build().unwrap();
+        rt.block_on(async move {
+            let lua = unsafe { Lua::unsafe_new() };
+            if let Err(e) = lua_preload::lua_preload(&lua) {
+                eprintln!("Error during lua_preload: {:?}", e);
+                return;
+            }
+            let main = lua.load(path::Path::new("resources/test.lua"));
+            main.call_async::<()>(()).await.unwrap();
+        });
+    }
 }

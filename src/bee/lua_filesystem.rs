@@ -361,7 +361,7 @@ fn symlink_status(_: &Lua, path: LuaFilePath) -> LuaResult<SymlinkStatus> {
 
 fn pairs(lua: &Lua, path: LuaFilePath) -> LuaResult<(mlua::Function, mlua::Table, mlua::Value)> {
     let table = lua.create_table()?;
-    if let Ok(_) = std::fs::exists(&path.path) {
+    if let Ok(true) = std::fs::exists(&path.path) {
         for entry in std::fs::read_dir(&path.path)? {
             let entry = entry?;
             let path = entry.path();
@@ -386,6 +386,10 @@ fn pairs(lua: &Lua, path: LuaFilePath) -> LuaResult<(mlua::Function, mlua::Table
     }
     let next = lua.globals().get::<mlua::Function>("next").unwrap();
     Ok((next, table, mlua::Nil))
+}
+
+fn exe_path(_: &Lua, (): ()) -> LuaResult<LuaFilePath> {
+    Ok(LuaFilePath::new(std::env::current_exe().unwrap().to_str().unwrap().to_string()))
 }
 
 pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
@@ -429,6 +433,6 @@ pub fn bee_filesystem(lua: &Lua) -> LuaResult<Table> {
     )?;
     exports.set("fullpath", lua.create_function(full_path)?)?;
     exports.set("symlink_status", lua.create_function(symlink_status)?)?;
-
+    exports.set("exe_path", lua.create_function(exe_path)?)?;
     Ok(exports)
 }
