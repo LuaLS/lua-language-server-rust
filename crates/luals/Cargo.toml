@@ -13,3 +13,6 @@ path = "src/main.rs"
 luals-basic = { path = "../basic" }
 mlua.workspace = true
 tokio.workspace = true
+
+[features]
+no_format = []
