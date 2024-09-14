@@ -1,4 +1,3 @@
-use crate::lua_preload;
 use lazy_static::lazy_static;
 use mlua::prelude::LuaResult;
 use mlua::{prelude::*, Lua, UserData};
@@ -143,7 +142,7 @@ fn bee_thread_thread(_: &Lua, script: String) -> LuaResult<()> {
         let rt = Builder::new_current_thread().enable_all().build().unwrap();
         rt.block_on(async move {
             let lua = unsafe { Lua::unsafe_new() };
-            if let Err(e) = lua_preload::lua_preload(&lua) {
+            if let Err(e) = crate::lua_preload(&lua) {
                 eprintln!("Error during lua_preload: {:?}", e);
                 return;
             }

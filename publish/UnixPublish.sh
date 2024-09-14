@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cargo build --release
+cargo build --release -p luals
 
 if [ -d "dist" ]; then
     rm -rf dist

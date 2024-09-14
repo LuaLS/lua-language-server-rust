@@ -1,18 +1,10 @@
-mod bee;
-mod codestyle;
-mod lua_preload;
-mod lua_seri;
-mod override_lua;
-
-#[macro_use]
-extern crate lazy_static;
 use mlua::prelude::*;
 use std::{env, path};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> LuaResult<()> {
     let lua = unsafe { Lua::unsafe_new() };
-    lua_preload::lua_preload(&lua)?;
+    luals_basic::lua_preload(&lua)?;
 
     #[cfg(not(debug_assertions))]
     {
@@ -48,7 +40,7 @@ mod tests {
         let rt = Builder::new_current_thread().enable_all().build().unwrap();
         rt.block_on(async move {
             let lua = unsafe { Lua::unsafe_new() };
-            if let Err(e) = lua_preload::lua_preload(&lua) {
+            if let Err(e) = luals_basic::lua_preload(&lua) {
                 eprintln!("Error during lua_preload: {:?}", e);
                 return;
             }

@@ -1,5 +1,6 @@
 fn main() {
     std::env::set_var("CC_LOG", "1");
+    std::env::set_current_dir("../..").unwrap();
     // build_lua();
     build_lua_seri();
     build_lpeglabel();

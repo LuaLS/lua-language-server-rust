@@ -1,0 +1,15 @@
+[package]
+name = "luals"
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+include = ["resources/**/*"]
+
+[[bin]]
+name = "lua-language-server"
+path = "src/main.rs"
+
+[dependencies]
+luals-basic = { path = "../basic" }
+mlua.workspace = true
+tokio.workspace = true

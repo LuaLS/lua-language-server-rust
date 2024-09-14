@@ -1,27 +1,12 @@
-[package]
-name = "luals-rust"
-version = "0.1.0"
-edition = "2021"
-license-file = "LICENSE"
-include = ["resources/**/*"]
+[workspace]
+resolver = "2"
+members = [
+    "crates/*",
+]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
+[workspace.dependencies]
 mlua = { version = "0.10.0-beta.2", features = [ "lua54", "vendored", "async"] }
 lazy_static = "1.4.0"
 encoding_rs = "0.8"
 tokio = { version = "1.40.0", features = ["full"] }
 notify = { version = "6.1.1", features = ["serde"] }
-
-[build-dependencies]
-cc = "1.0"
-glob = "0.3.0"
-
-[[bin]]
-name = "lua-language-server"
-path = "src/main.rs"
-
-[features]
-no_format = []
-

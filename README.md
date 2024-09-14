@@ -23,7 +23,7 @@ To build the project, run:
 
 ```bash
 git submodule update --init --recursive
-cargo build
+cargo build --release -p luals
 ```
 
 # Publish

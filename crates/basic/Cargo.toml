@@ -1,0 +1,19 @@
+[package]
+name = "luals-basic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mlua.workspace = true
+lazy_static.workspace = true
+encoding_rs.workspace = true
+tokio.workspace = true
+notify.workspace = true
+
+
+[build-dependencies]
+cc = "1.0"
+glob = "0.3.0"
+
+[features]
+no_format = []

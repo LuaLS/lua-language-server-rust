@@ -1,9 +1,12 @@
-use crate::bee;
+pub mod bee;
+pub mod codestyle;
+pub mod lua_seri;
+pub mod override_lua;
+
+#[macro_use]
+extern crate lazy_static;
 #[allow(unused)]
 use crate::codestyle::fake_code_style;
-use crate::lua_seri;
-#[allow(unused)]
-use crate::override_lua;
 use mlua::{lua_State, prelude::*};
 
 extern "C-unwind" {
