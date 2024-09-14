@@ -1,7 +1,0 @@
-[package]
-name = "luals-wasm"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-luals-basic = { path = "../basic" }

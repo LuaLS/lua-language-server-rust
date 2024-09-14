@@ -35,17 +35,17 @@ jobs:
         if: ${{ matrix.cross == 'general' }}
         run: |
           rustup target add ${{ matrix.target }}
-          cargo build --release --target ${{ matrix.target }} 
+          cargo build --release --target ${{ matrix.target }}  -p luals
       - name: Build - cross
         if: ${{ matrix.cross == 'cross' }}
         run: |
           cargo install cross
-          cross build --release --target ${{ matrix.target }} 
+          cross build --release --target ${{ matrix.target }} -p luals
       - name: Build - no_format
         if: ${{ matrix.cross == 'no_format' }}
         run: |
           cargo install cross
-          cross build --release --target ${{ matrix.target }} --features no_format
+          cross build --release --target ${{ matrix.target }} --features no_format -p luals
     
       - name: package-unix
         if: ${{ matrix.os != 'windows-latest' }}
