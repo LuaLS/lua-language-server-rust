@@ -1,4 +1,4 @@
-cargo build --release
+cargo build --release -p luals
 
 $distPath = "dist"
 
