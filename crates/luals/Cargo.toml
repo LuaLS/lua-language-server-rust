@@ -10,9 +10,11 @@ name = "lua-language-server"
 path = "src/main.rs"
 
 [dependencies]
-luals-basic = { path = "../basic" }
 mlua.workspace = true
 tokio.workspace = true
 
+luals-basic = { path = "../basic" , optional = true }
+
 [features]
-no_format = []
+default = ["luals-basic"]
+no_format = ["luals-basic/no_format"]
