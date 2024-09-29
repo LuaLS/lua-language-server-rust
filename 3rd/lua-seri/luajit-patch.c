@@ -6,7 +6,7 @@ int common_lua_rawgeti(lua_State* L, int idx, int n)
 	lua_rawgeti(L, idx, n);
 #else
 	lua_rawgeti(L, idx, n);
-	return LUA_TTABLE;
+	return lua_type(L, -1);
 #endif
 }
 
