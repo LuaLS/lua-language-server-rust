@@ -18,11 +18,12 @@ DEVELOP = %s
 DBGPORT = %d
 DBGWAIT = %s
 
+require "luajitCompact"
 log = require 'brave.log'
 
 xpcall(dofile, log.error, %q)
 local brave = require 'brave'
-brave.register(%d, %q)
+brave.register(%d, %s)
 ]]
 
 ---@class pub
@@ -43,6 +44,12 @@ end
 ---@param num integer
 ---@param privatePad string?
 function m.recruitBraves(num, privatePad)
+    if type(privatePad) == "string" then
+        privatePad = string.format("[[%s]]", privatePad)
+    else
+        privatePad = "nil"
+    end
+
     for _ = 1, num do
         local id = #m.braves + 1
         log.debug('Create brave:', id)
@@ -63,6 +70,7 @@ function m.recruitBraves(num, privatePad)
             memory   = 0,
         }
     end
+
     if privatePad and not m.prvtPad[privatePad] then
         thread.newchannel('req:' .. privatePad)
         thread.newchannel('res:' .. privatePad)

@@ -1,4 +1,5 @@
 local brave   = require 'brave.brave'
+local inspect = require("inspect")
 
 brave.on('loadProtoByStdio', function ()
     local jsonrpc = require 'jsonrpc'
