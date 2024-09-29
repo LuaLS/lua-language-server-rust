@@ -1,3 +1,4 @@
+require "luajitCompact"
 local fs      = require 'bee.filesystem'
 local util    = require 'utility'
 local version = require 'version'
@@ -53,9 +54,10 @@ ROOT     = fs.absolute(util.expandPath(rootPath))
 LOGPATH  = LOGPATH  and util.expandPath(LOGPATH)  or (ROOT:string() .. '/log')
 METAPATH = METAPATH and util.expandPath(METAPATH) or (ROOT:string() .. '/meta')
 
+
 ---@diagnostic disable-next-line: deprecated
-debug.setcstacklimit(200)
-collectgarbage('generational', 10, 50)
+-- debug.setcstacklimit(200)
+-- collectgarbage('generational', 10, 50)
 --collectgarbage('incremental', 120, 120, 0)
 
 ---@diagnostic disable-next-line: lowercase-global
@@ -77,6 +79,7 @@ xpcall(dofile, log.debug, (ROOT / 'debugger.lua'):string())
 
 require 'cli'
 
-local _, service = xpcall(require, log.error, 'service')
+-- local _, service = xpcall(require, log.error, 'service')
+local service = require 'service'
 
 service.start()

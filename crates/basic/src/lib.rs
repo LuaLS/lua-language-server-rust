@@ -2,12 +2,14 @@ pub mod bee;
 pub mod codestyle;
 pub mod lua_seri;
 pub mod override_lua;
+mod utf8;
 
 #[macro_use]
 extern crate lazy_static;
 #[allow(unused)]
 use crate::codestyle::fake_code_style;
 use mlua::{lua_State, prelude::*};
+use override_lua::encoder;
 
 extern "C-unwind" {
     fn luaopen_lpeglabel(lua: *mut lua_State) -> i32;
@@ -31,6 +33,10 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
         let code_format_loader = unsafe { lua.create_c_function(luaopen_code_format) }?;
         add_preload_module(&lua, "code_format", code_format_loader)?;
     }
+
+    utf8::register_lua_utf8(lua)?;
+    let encoder_loader = lua.create_function(|lua: &Lua, ()| Ok(encoder::lua_encoder_loader(lua)))?;
+    add_preload_module(&lua, "encoder", encoder_loader)?;
 
     // bee.platform
     let bee_platform_loader =
@@ -75,7 +81,11 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
 
     add_package_path(
         &lua,
-        "resources/?.lua;resources/?/init.lua;resources/script/?.lua;resources/script/?/init.lua",
+        vec![
+            "resources/?.lua;resources/?/init.lua;",
+            "resources/override_script/?.lua;resources/override_script/?/init.lua;",
+            "resources/script/?.lua;resources/script/?/init.lua"
+        ],
     )?;
 
     Ok(())
@@ -90,9 +100,11 @@ fn add_preload_module(lua: &Lua, name: &str, loader: LuaFunction) -> LuaResult<(
     Ok(())
 }
 
-fn add_package_path(lua: &Lua, path: &str) -> LuaResult<()> {
+fn add_package_path(lua: &Lua, paths: Vec<&str>) -> LuaResult<()> {
     let package = lua.globals().get::<LuaTable>("package")?;
     let package_path = package.get::<String>("path")?;
+    let path = paths.join(";");
+
     package.set("path", format!("{};{}", path, package_path))?;
     Ok(())
 }
