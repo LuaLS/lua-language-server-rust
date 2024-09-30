@@ -199,8 +199,11 @@ function m.applyMethod(proto)
                 m.responseErr(proto.id, proto._closeReason or define.ErrorCodes.InternalError, proto._closeMessage or res)
             end
         end
-        ok, res = xpcall(abil, log.error, proto.params, proto.id)
-        await.delay()
+
+        defer(response, function()
+            ok, res = xpcall(abil, log.error, proto.params, proto.id)
+            await.delay()
+        end)
     end)
 end
 

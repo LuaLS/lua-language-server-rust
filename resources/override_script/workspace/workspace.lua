@@ -1,40 +1,40 @@
-local pub        = require 'pub'
-local fs         = require 'bee.filesystem'
-local furi       = require 'file-uri'
-local files      = require 'files'
-local config     = require 'config'
-local glob       = require 'glob'
-local platform   = require 'bee.platform'
-local await      = require 'await'
-local client     = require 'client'
-local util       = require 'utility'
-local fw         = require 'filewatch'
-local scope      = require 'workspace.scope'
-local loading    = require 'workspace.loading'
-local inspect    = require 'inspect'
-local lang       = require 'language'
+local pub      = require 'pub'
+local fs       = require 'bee.filesystem'
+local furi     = require 'file-uri'
+local files    = require 'files'
+local config   = require 'config'
+local glob     = require 'glob'
+local platform = require 'bee.platform'
+local await    = require 'await'
+local client   = require 'client'
+local util     = require 'utility'
+local fw       = require 'filewatch'
+local scope    = require 'workspace.scope'
+local loading  = require 'workspace.loading'
+local inspect  = require 'inspect'
+local lang     = require 'language'
 
 ---@class workspace
-local m = {}
-m.type = 'workspace'
-m.watchList = {}
+local m        = {}
+m.type         = 'workspace'
+m.watchList    = {}
 
 --- 注册事件
 ---@param callback async fun(ev: string, uri: uri)
 function m.watch(callback)
-    m.watchList[#m.watchList+1] = callback
+    m.watchList[#m.watchList + 1] = callback
 end
 
 function m.onWatch(ev, uri)
     for _, callback in ipairs(m.watchList) do
-        await.call(function ()
+        await.call(function()
             callback(ev, uri)
         end)
     end
 end
 
 function m.initRoot(uri)
-    m.rootUri  = uri
+    m.rootUri = uri
     log.info('Workspace init root: ', uri)
 
     local logPath = fs.path(LOGPATH) / (uri:gsub('[/:]+', '_') .. '.log')
@@ -47,9 +47,9 @@ end
 function m.create(uri)
     log.info('Workspace create: ', uri)
     local scp = scope.createFolder(uri)
-    m.folders[#m.folders+1] = scp
+    m.folders[#m.folders + 1] = scp
     if uri == furi.encode '/'
-    or uri == furi.encode(os.getenv 'HOME' or '') then
+        or uri == furi.encode(os.getenv 'HOME' or '') then
         if not FORCE_ACCEPT_WORKSPACE then
             client.showMessage('Error', lang.script('WORKSPACE_NOT_ALLOWED', furi.decode(uri)))
             scp:set('bad root', true)
@@ -78,6 +78,7 @@ function m.reset()
     m.folders = {}
     m.rootUri = nil
 end
+
 m.reset()
 
 function m.getRootUri(uri)
@@ -86,12 +87,12 @@ function m.getRootUri(uri)
 end
 
 local globInteferFace = {
-    type = function (path, data)
+    type = function(path, data)
         if data[path] then
             return data[path]
         end
         local result
-        pcall(function ()
+        pcall(function()
             if fs.is_directory(fs.path(path)) then
                 result = 'directory'
                 data[path] = 'directory'
@@ -102,7 +103,7 @@ local globInteferFace = {
         end)
         return result
     end,
-    list = function (path, data)
+    list = function(path, data)
         if data[path] == 'file' then
             return nil
         end
@@ -113,14 +114,14 @@ local globInteferFace = {
         end
         data[path] = true
         local paths = {}
-        pcall(function ()
+        pcall(function()
             for fullpath, status in fs.pairs(fullPath) do
                 local pathString = fullpath:string()
-                paths[#paths+1] = pathString
+                paths[#paths + 1] = pathString
                 local st = status:type()
                 if st == 'directory'
-                or st == 'symlink'
-                or st == 'junction' then
+                    or st == 'symlink'
+                    or st == 'junction' then
                     data[pathString] = 'directory'
                 else
                     data[pathString] = 'file'
@@ -142,7 +143,7 @@ function m.getNativeMatcher(scp)
     for path, ignore in pairs(config.get(scp.uri, 'files.exclude')) do
         if ignore then
             log.debug('Ignore by exclude:', path)
-            pattern[#pattern+1] = path
+            pattern[#pattern + 1] = path
         end
     end
     if scp.uri and config.get(scp.uri, 'Lua.workspace.useGitIgnore') then
@@ -151,16 +152,16 @@ function m.getNativeMatcher(scp)
             for line in buf:gmatch '[^\r\n]+' do
                 if line:sub(1, 1) ~= '#' then
                     log.debug('Ignore by .gitignore:', line)
-                    pattern[#pattern+1] = line
+                    pattern[#pattern + 1] = line
                 end
             end
         end
-        buf = util.loadFile(furi.decode(scp.uri).. '/.git/info/exclude')
+        buf = util.loadFile(furi.decode(scp.uri) .. '/.git/info/exclude')
         if buf then
             for line in buf:gmatch '[^\r\n]+' do
                 if line:sub(1, 1) ~= '#' then
                     log.debug('Ignore by .git/info/exclude:', line)
-                    pattern[#pattern+1] = line
+                    pattern[#pattern + 1] = line
                 end
             end
         end
@@ -170,7 +171,7 @@ function m.getNativeMatcher(scp)
         if buf then
             for path in buf:gmatch('path = ([^\r\n]+)') do
                 log.debug('Ignore by .gitmodules:', path)
-                pattern[#pattern+1] = path
+                pattern[#pattern + 1] = path
             end
         end
     end
@@ -178,12 +179,12 @@ function m.getNativeMatcher(scp)
         path = m.getAbsolutePath(scp.uri, path)
         if path then
             log.debug('Ignore by library:', path)
-            debug[#pattern+1] = path
+            debug[#pattern + 1] = path
         end
     end
     for _, path in ipairs(config.get(scp.uri, 'Lua.workspace.ignoreDir')) do
         log.debug('Ignore directory:', path)
-        pattern[#pattern+1] = path
+        pattern[#pattern + 1] = path
     end
 
     local matcher = glob.gitignore(pattern, {
@@ -207,12 +208,12 @@ function m.getLibraryMatchers(scp)
     for path, ignore in pairs(config.get(scp.uri, 'files.exclude')) do
         if ignore then
             log.debug('Ignore by exclude:', path)
-            pattern[#pattern+1] = path
+            pattern[#pattern + 1] = path
         end
     end
     for _, path in ipairs(config.get(scp.uri, 'Lua.workspace.ignoreDir')) do
         log.debug('Ignore directory:', path)
-        pattern[#pattern+1] = path
+        pattern[#pattern + 1] = path
     end
 
     local librarys = {}
@@ -238,7 +239,7 @@ function m.getLibraryMatchers(scp)
                 root       = path,
                 ignoreCase = platform.os == 'windows',
             }, globInteferFace)
-            matchers[#matchers+1] = {
+            matchers[#matchers + 1] = {
                 uri     = furi.encode(nPath),
                 matcher = matcher
             }
@@ -268,8 +269,8 @@ function m.isValidLuaUri(uri)
     if not files.isLua(uri) then
         return false
     end
-    if  m.isIgnored(uri)
-    and not files.isLibrary(uri) then
+    if m.isIgnored(uri)
+        and not files.isLibrary(uri) then
         return false
     end
     return true
@@ -280,21 +281,23 @@ function m.awaitLoadFile(uri)
     m.awaitReady(uri)
     local scp = scope.getScope(uri)
     local ld = loading.create(scp)
-    local native = m.getNativeMatcher(scp)
-    log.info('Scan files at:', uri)
-    ---@async
-    native:scan(furi.decode(uri), function (path)
-        local uri = files.getRealUri(furi.encode(path))
-        scp:get('cachedUris')[uri] = true
-        ld:loadFile(uri)
+    defer(ld, function()
+        local native = m.getNativeMatcher(scp)
+        log.info('Scan files at:', uri)
+        ---@async
+        native:scan(furi.decode(uri), function(path)
+            local uri = files.getRealUri(furi.encode(path))
+            scp:get('cachedUris')[uri] = true
+            ld:loadFile(uri)
+        end)
+        ld:loadAll(uri)
     end)
-    ld:loadAll(uri)
 end
 
 function m.removeFile(uri)
     for _, scp in ipairs(m.folders) do
         if scp:isChildUri(uri)
-        or scp:isLinkedUri(uri) then
+            or scp:isLinkedUri(uri) then
             local cachedUris = scp:get 'cachedUris'
             if cachedUris and cachedUris[uri] then
                 cachedUris[uri] = nil
@@ -319,66 +322,69 @@ function m.awaitPreload(scp)
     end
 
     local ld = loading.create(scp)
-    scp:set('loading', ld)
+    defer(ld, function()
+        scp:set('loading', ld)
 
-    log.info('Preload start:', scp:getName())
+        log.info('Preload start:', scp:getName())
 
-    local native   = m.getNativeMatcher(scp)
-    local librarys = m.getLibraryMatchers(scp)
+        local native   = m.getNativeMatcher(scp)
+        local librarys = m.getLibraryMatchers(scp)
 
-    if scp.uri and not scp:get('bad root') then
-        log.info('Scan files at:', scp:getName())
-        scp:gc(fw.watch(files.normalize(furi.decode(scp.uri)), true, function (path)
-            local rpath = m.getRelativePath(path)
-            if native(rpath) then
-                return false
-            end
-            return true
-        end))
-        local count = 0
-        ---@async
-        native:scan(furi.decode(scp.uri), function (path)
-            local uri = files.getRealUri(furi.encode(path))
-            scp:get('cachedUris')[uri] = true
-            ld:loadFile(uri)
-        end, function (_) ---@async
-            count = count + 1
-            if count == 100000 then
-                client.showMessage('Warning', lang.script('WORKSPACE_SCAN_TOO_MUCH', count, furi.decode(scp.uri)))
-            end
-        end)
-    end
+        if scp.uri and not scp:get('bad root') then
+            log.info('Scan files at:', scp:getName())
+            scp:gc(fw.watch(files.normalize(furi.decode(scp.uri)), true, function(path)
+                local rpath = m.getRelativePath(path)
+                if native(rpath) then
+                    return false
+                end
+                return true
+            end))
+            local count = 0
+            ---@async
+            native:scan(furi.decode(scp.uri), function(path)
+                local uri = files.getRealUri(furi.encode(path))
+                scp:get('cachedUris')[uri] = true
+                ld:loadFile(uri)
+            end, function(_) ---@async
+                count = count + 1
+                if count == 100000 then
+                    client.showMessage('Warning', lang.script('WORKSPACE_SCAN_TOO_MUCH', count, furi.decode(scp.uri)))
+                end
+            end)
+        end
 
-    for _, libMatcher in ipairs(librarys) do
-        log.info('Scan library at:', libMatcher.uri)
-        local count = 0
-        scp:gc(fw.watch(furi.decode(libMatcher.uri), true, function (path)
-            local rpath = m.getRelativePath(path)
-            if libMatcher.matcher(rpath) then
-                return false
-            end
-            return true
-        end))
-        scp:addLink(libMatcher.uri)
-        ---@async
-        libMatcher.matcher:scan(furi.decode(libMatcher.uri), function (path)
-            local uri = files.getRealUri(furi.encode(path))
-            scp:get('cachedUris')[uri] = true
-            ld:loadFile(uri, libMatcher.uri)
-        end, function () ---@async
-            count = count + 1
-            if count == 100000 then
-                client.showMessage('Warning', lang.script('WORKSPACE_SCAN_TOO_MUCH', count, furi.decode(libMatcher.uri)))
-            end
-        end)
-    end
+        for _, libMatcher in ipairs(librarys) do
+            log.info('Scan library at:', libMatcher.uri)
+            local count = 0
+            scp:gc(fw.watch(furi.decode(libMatcher.uri), true, function(path)
+                local rpath = m.getRelativePath(path)
+                if libMatcher.matcher(rpath) then
+                    return false
+                end
+                return true
+            end))
+            scp:addLink(libMatcher.uri)
+            ---@async
+            libMatcher.matcher:scan(furi.decode(libMatcher.uri), function(path)
+                local uri = files.getRealUri(furi.encode(path))
+                scp:get('cachedUris')[uri] = true
+                ld:loadFile(uri, libMatcher.uri)
+            end, function() ---@async
+                count = count + 1
+                if count == 100000 then
+                    client.showMessage('Warning',
+                        lang.script('WORKSPACE_SCAN_TOO_MUCH', count, furi.decode(libMatcher.uri)))
+                end
+            end)
+        end
 
-    -- must wait for other scopes to add library
-    await.sleep(0.1)
+        -- must wait for other scopes to add library
+        await.sleep(0.1)
 
-    log.info(('Found %d files at:'):format(ld.max), scp:getName())
-    ld:loadAll(scp:getName())
-    log.info('Preload finish at:', scp:getName())
+        log.info(('Found %d files at:'):format(ld.max), scp:getName())
+        ld:loadAll(scp:getName())
+        log.info('Preload finish at:', scp:getName())
+    end)
 end
 
 --- 查找符合指定file path的所有uri
@@ -387,8 +393,8 @@ function m.findUrisByFilePath(path)
     if type(path) ~= 'string' then
         return {}
     end
-    local myUri = furi.encode(path)
-    local vm    = require 'vm'
+    local myUri       = furi.encode(path)
+    local vm          = require 'vm'
     local resultCache = vm.getCache 'findUrisByFilePath.result'
     if resultCache[path] then
         return resultCache[path]
@@ -396,13 +402,12 @@ function m.findUrisByFilePath(path)
     local results = {}
     for uri in files.eachFile() do
         if uri == myUri then
-            results[#results+1] = uri
+            results[#results + 1] = uri
         end
     end
     resultCache[path] = results
     return results
 end
-
 
 ---@param folderUri? uri
 ---@param path string
@@ -447,7 +452,7 @@ end
 ---@param scp scope
 function m.reload(scp)
     ---@async
-    await.call(function ()
+    await.call(function()
         m.awaitReload(scp)
     end)
 end
@@ -525,9 +530,9 @@ function m.awaitReady(uri)
     end
     local scp = scope.getScope(uri)
     local waitingReady = scp:get('waitingReady')
-                    or   scp:set('waitingReady', {})
-    await.wait(function (waker)
-        waitingReady[#waitingReady+1] = waker
+        or scp:set('waitingReady', {})
+    await.wait(function(waker)
+        waitingReady[#waitingReady + 1] = waker
     end)
 end
 
@@ -563,11 +568,11 @@ function m.getLoadingProcess(uri)
     end
 end
 
-config.watch(function (uri, key, value, oldValue)
+config.watch(function(uri, key, value, oldValue)
     if key:find '^Lua.runtime'
-    or key:find '^Lua.workspace'
-    or key:find '^Lua.type'
-    or key:find '^files' then
+        or key:find '^Lua.workspace'
+        or key:find '^Lua.type'
+        or key:find '^files' then
         if value ~= oldValue then
             local scp = scope.getScope(uri)
             m.reload(scp)
@@ -576,10 +581,10 @@ config.watch(function (uri, key, value, oldValue)
     end
 end)
 
-fw.event(function (ev, path) ---@async
-    local uri  = furi.encode(path)
+fw.event(function(ev, path) ---@async
+    local uri = furi.encode(path)
 
-    if     ev == 'create' then
+    if ev == 'create' then
         log.debug('FileChangeType.Created', uri)
         m.awaitLoadFile(uri)
     elseif ev == 'delete' then
@@ -604,7 +609,7 @@ fw.event(function (ev, path) ---@async
     local filename = fs.path(path):filename():string()
     -- 排除类文件发生更改需要重新扫描
     if filename == '.gitignore'
-    or filename == '.gitmodules' then
+        or filename == '.gitmodules' then
         local scp = scope.getScope(uri)
         if scp.type ~= 'fallback' then
             m.reload(scp)

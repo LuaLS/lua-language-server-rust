@@ -695,33 +695,34 @@ function m.compileState(uri)
         log.error('Client not ready!', uri)
     end
     local prog = progress.create(uri, lang.script.WINDOW_COMPILING, 0.5)
-    prog:setMessage(ws.getRelativePath(uri))
-    log.trace('Compile State:', uri)
-    local clock = os.clock()
-    local state, err = parser.compile(file.text
-    , 'Lua'
-    , config.get(uri, 'Lua.runtime.version')
-    , options
-    )
-    local passed = os.clock() - clock
-    if passed > 0.1 then
-        log.warn(('Compile [%s] takes [%.3f] sec, size [%.3f] kb.'):format(uri, passed, #file.text / 1000))
-    end
+    return defer(prog, function()
+        prog:setMessage(ws.getRelativePath(uri))
+        log.trace('Compile State:', uri)
+        local clock = os.clock()
+        local state, err = parser.compile(file.text
+        , 'Lua'
+        , config.get(uri, 'Lua.runtime.version')
+        , options
+        )
+        local passed = os.clock() - clock
+        if passed > 0.1 then
+            log.warn(('Compile [%s] takes [%.3f] sec, size [%.3f] kb.'):format(uri, passed, #file.text / 1000))
+        end
 
-    if not state then
-        log.error('Compile failed:', uri, err)
-        return nil
-    end
+        if not state then
+            log.error('Compile failed:', uri, err)
+            return nil
+        end
 
-    state = pluginOnTransformAst(uri, state)
-    if not state then
-        log.error('pluginOnTransformAst failed! discard the file state')
-        return nil
-    end
+        state = pluginOnTransformAst(uri, state)
+        if not state then
+            log.error('pluginOnTransformAst failed! discard the file state')
+            return nil
+        end
 
-    m.compileStateThen(state, file)
-
-    return state
+        m.compileStateThen(state, file)
+        return state
+    end)
 end
 
 ---@class parser.state

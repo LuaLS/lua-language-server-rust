@@ -73,7 +73,10 @@ function m.await(callback, ...)
     end
     return m.wait(function(resume, ...)
         m.call(function()
-            resume(callback())
+            local returnNil = resume
+            defer(returnNil, function ()
+                resume(callback())
+            end)
         end, ...)
     end, ...)
 end
