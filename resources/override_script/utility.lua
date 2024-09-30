@@ -467,43 +467,45 @@ local esc = {
     ['\n'] = '\\\n',
 }
 
+-- TODO replace with rust
 function m.viewString(str, quo)
-    if not quo then
-        if str:find('[\r\n]') then
-            quo = '[['
-        elseif not str:find("'", 1, true) and str:find('"', 1, true) then
-            quo = "'"
-        else
-            quo = '"'
-        end
-    end
-    if quo == "'" then
-        str = str:gsub('[\000-\008\011-\012\014-\031\127]', function(char)
-            return ('\\%03d'):format(char:byte())
-        end)
-        return quo .. str:gsub([=[['\r\n]]=], esc) .. quo
-    elseif quo == '"' then
-        str = str:gsub('[\000-\008\011-\012\014-\031\127]', function(char)
-            return ('\\%03d'):format(char:byte())
-        end)
-        return quo .. str:gsub([=[["\r\n]]=], esc) .. quo
-    else
-        local eqnum = #quo - 2
-        local fsymb = ']' .. ('='):rep(eqnum) .. ']'
-        if not str:find(fsymb, 1, true) then
-            str = str:gsub('[\000-\008\011-\012\014-\031\127]', '')
-            return quo .. str .. fsymb
-        end
-        for i = 0, 10 do
-            local fsymb = ']' .. ('='):rep(i) .. ']'
-            if not str:find(fsymb, 1, true) then
-                local ssymb = '[' .. ('='):rep(i) .. '['
-                str = str:gsub('[\000-\008\011-\012\014-\031\127]', '')
-                return ssymb .. str .. fsymb
-            end
-        end
-        return m.viewString(str, '"')
-    end
+    -- if not quo then
+    --     if str:find('[\r\n]') then
+    --         quo = '[['
+    --     elseif not str:find("'", 1, true) and str:find('"', 1, true) then
+    --         quo = "'"
+    --     else
+    --         quo = '"'
+    --     end
+    -- end
+    -- if quo == "'" then
+    --     str = str:gsub('[\000-\008\011-\012\014-\031\127]', function(char)
+    --         return ('\\%03d'):format(char:byte())
+    --     end)
+    --     return quo .. str:gsub([=[['\r\n]]=], esc) .. quo
+    -- elseif quo == '"' then
+    --     str = str:gsub('[\000-\008\011-\012\014-\031\127]', function(char)
+    --         return ('\\%03d'):format(char:byte())
+    --     end)
+    --     return quo .. str:gsub([=[["\r\n]]=], esc) .. quo
+    -- else
+    --     local eqnum = #quo - 2
+    --     local fsymb = ']' .. ('='):rep(eqnum) .. ']'
+    --     if not str:find(fsymb, 1, true) then
+    --         str = str:gsub('[\000-\008\011-\012\014-\031\127]', '')
+    --         return quo .. str .. fsymb
+    --     end
+    --     for i = 0, 10 do
+    --         local fsymb = ']' .. ('='):rep(i) .. ']'
+    --         if not str:find(fsymb, 1, true) then
+    --             local ssymb = '[' .. ('='):rep(i) .. '['
+    --             str = str:gsub('[\000-\008\011-\012\014-\031\127]', '')
+    --             return ssymb .. str .. fsymb
+    --         end
+    --     end
+    --     return m.viewString(str, '"')
+    -- end
+    return str
 end
 
 function m.viewLiteral(v)

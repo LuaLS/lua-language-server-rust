@@ -100,7 +100,8 @@ function m.close(id)
             if type(callback) == 'function' then
                 xpcall(callback, log.error)
             end
-            coroutine.close(co)
+            -- luajit donot support coroutine.close
+            -- coroutine.close(co)
         end
     end
 end

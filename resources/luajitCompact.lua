@@ -28,3 +28,18 @@ function defer(toBeClosed, callback)
         end
     end
 end
+
+math.maxinteger = 0x7FFFFFFFLL
+function math.tointeger(x)
+    if type(x) ~= "number" then
+        return nil
+    end
+
+    local int = x >= 0 and math.floor(x) or math.ceil(x)
+
+    if int == x then
+        return int
+    else
+        return nil
+    end
+end

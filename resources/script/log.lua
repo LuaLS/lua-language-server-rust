@@ -87,7 +87,7 @@ end
 function m.error(...)
     -- Don't use tail calls,
     -- Otherwise, the count of `debug.getinfo` will be wrong
-    local msg = pushLog('error', ...)
+    local msg = pushLog('info', ...)
     return msg
 end
 
