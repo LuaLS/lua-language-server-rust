@@ -43,3 +43,11 @@ function math.tointeger(x)
         return nil
     end
 end
+
+function math.type(x)
+    if type(x) == "number" then
+        return math.tointeger(x) and "integer" or "number"
+    else
+        return nil
+    end
+end
