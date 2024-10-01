@@ -4,6 +4,13 @@ local getmetatable = getmetatable
 local xpcall = xpcall
 local math_floor = math.floor
 local math_ceil = math.ceil
+local coroutine_resume = coroutine.resume
+local coroutine_status = coroutine.status
+local coroutine_running = coroutine.running
+local coroutine_create = coroutine.create
+local yield = coroutine.yield
+local pcall = pcall
+local unpack = unpack
 
 table.unpack = unpack
 
@@ -36,45 +43,50 @@ function math.type(x)
     end
 end
 
-local coroutine_resume = coroutine.resume
-local coroutine_status = coroutine.status
-local coroutine_running = coroutine.running
+
 
 local cancel_table = setmetatable({}, { __mode = 'kv' })
 
 function coroutine.resume(co, ...)
-    if cancel_table[co] then
-        return false, 'cannot resume dead coroutine'
+    local results = { pcall(coroutine_resume, co, ...) }
+    local ok = results[1]
+    if not ok then
+        local reason = results[2]
+        if reason == "cancel" then
+            return false, 'cannot resume dead coroutine'
+        end
     end
 
-    return coroutine_resume(co, ...)
+    return ok, unpack(results, 2)
 end
 
-function coroutine.status(co)
-    if cancel_table[co] then
-        return 'dead'
-    end
+-- donot return 'dead' status
+-- function coroutine.status(co)
+--     return coroutine_status(co)
+-- end
 
-    return coroutine_status(co)
+-- 要实现取消, 只能在协程内的调用通过错误让协程消亡
+function coroutine.yield(...)
+    if cancel_table[coroutine_running()] then
+        error("cancel")
+    end
+    return yield(...)
 end
 
 function coroutine.close(co)
     if coroutine_status(co) == 'suspended' then
         cancel_table[co] = true
+        return true
     end
+    return false
 end
 
 function defer(toBeClosed, callback)
     local ctype = type(toBeClosed)
     local meta = getmetatable(toBeClosed)
-    local closeCallback = nil
     local ok, result
 
-    local co = coroutine_running()
-    if coroutine.status(co) ~= 'dead' then
-        ok, result = xpcall(callback, log.error)
-    end
-
+    ok, result = xpcall(callback, log.error)
     if meta and meta.__close then
         meta.__close(toBeClosed)
     elseif ctype == 'function' then
