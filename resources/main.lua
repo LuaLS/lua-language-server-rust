@@ -2,7 +2,6 @@ require "luajitCompact"
 local fs      = require 'bee.filesystem'
 local util    = require 'utility'
 local version = require 'version'
-
 require 'config.env'
 
 local function getValue(value)
