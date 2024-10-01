@@ -1,4 +1,4 @@
-cargo build --release -p luals --features "no_format"
+cargo build --release -p luals
 
 $distPath = "dist"
 

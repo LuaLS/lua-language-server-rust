@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cargo build --release -p luals --features "no_format"
+cargo build --release -p luals
 
 if [ -d "dist" ]; then
     rm -rf dist

@@ -76,6 +76,7 @@ fn build_emmyluacodestyle() {
         .include("3rd/EmmyLuaCodeStyle/LuaParser/include")
         .include("3rd/EmmyLuaCodeStyle/3rd/wildcards/include")
         .include("3rd/LuaJIT/src");
+    builder.define("LUAJIT", "1");
 
     let file_patterns = vec![
         "3rd/EmmyLuaCodeStyle/CodeFormatLib/src/*.cpp",
