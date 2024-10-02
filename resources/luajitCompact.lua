@@ -97,3 +97,8 @@ function defer(toBeClosed, callback)
         return result
     end
 end
+
+
+-- for current performance, jit.off has more performance than jit.on
+jit.off()
+jit.flush()
