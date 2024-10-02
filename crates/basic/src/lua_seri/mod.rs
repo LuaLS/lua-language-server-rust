@@ -1,3 +1,4 @@
+use mlua::ffi::lua_Integer;
 use mlua::{ffi, lua_State, prelude::*, Lua};
 use std::ffi::c_void;
 use std::os::raw::c_int;
@@ -15,7 +16,8 @@ unsafe extern "C-unwind" fn lua_seri_pack(lua_state: *mut lua_State) -> i32 {
     }
 
     let buffer_id = seri_pack(lua_state, 0, std::ptr::null_mut());
-    ffi::lua_pushinteger(lua_state, buffer_id as i64);
+    
+    ffi::lua_pushinteger(lua_state, buffer_id as lua_Integer);
     1
 }
 

@@ -108,10 +108,10 @@ fn build_emmyluacodestyle() {
 
 fn build_luajit_utf8() {
     cc::Build::new()
-        .include("3rd/luajit-utf8")
+        .include("3rd/LuaJIT-utf8")
         .include("3rd/LuaJIT/src")
         .files(
-            std::fs::read_dir("3rd/luajit-utf8")
+            std::fs::read_dir("3rd/LuaJIT-utf8")
                 .unwrap()
                 .filter_map(|entry| {
                     let entry = entry.unwrap();
