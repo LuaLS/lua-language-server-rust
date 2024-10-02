@@ -11,9 +11,9 @@ m.DiagnosticSeverity = {
 }
 
 m.DiagnosticFileStatus = {
-    Any    = 1,
-    Opened = 2,
-    None   = 3,
+    Any        = 1,
+    Opened     = 2,
+    None       = 3,
 }
 
 --- 诊断类型与默认等级

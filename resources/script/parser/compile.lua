@@ -370,7 +370,7 @@ local function unknownSymbol(start, finish, word)
     return true
 end
 
-local function skipUnknownSymbol(stopSymbol)
+local function skipUnknownSymbol()
     if unknownSymbol() then
         Index = Index + 2
         return true
@@ -1123,7 +1123,6 @@ local function parseShortString()
                 stringPool[stringIndex] = '\n'
                 currentOffset = Tokens[Index] + #nextToken
                 skipNL()
-                local right = getPosition(currentOffset + 1, 'right')
                 escs[#escs+1] = escLeft
                 escs[#escs+1] = escLeft + 1
                 escs[#escs+1] = 'normal'
@@ -2274,7 +2273,7 @@ local function parseParams(params, isLambda)
             Index = Index + 2
             goto CONTINUE
         end
-        skipUnknownSymbol ('%,%' .. endToken .. '%.')
+        skipUnknownSymbol()
         ::CONTINUE::
     end
     return params
@@ -3744,7 +3743,7 @@ local function parseWhile()
         local left  = getPosition(Tokens[Index], 'left')
         local right = getPosition(Tokens[Index] + #doToken - 1, 'right')
         action.finish                     = left
-        action.bstart                     = action.finish
+        action.bstart                     = right
         action.keyword[#action.keyword+1] = left
         action.keyword[#action.keyword+1] = right
         if doToken == 'then' then

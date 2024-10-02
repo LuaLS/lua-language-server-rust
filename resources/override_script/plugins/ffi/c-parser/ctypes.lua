@@ -7,13 +7,13 @@ local typed = require("plugins.ffi.c-parser.typed")
 
 local equal_declarations
 
-local add_type = typed("TypeList, string, CType -> ()", function(lst, name, typ)
+local add_type = typed("TypeList, string, CType -> ()", function (lst, name, typ)
     lst[name] = typ
     table.insert(lst, { name = name, type = typ })
 end)
 
 -- Compare two lists of declarations
-local equal_lists = typed("array, array -> boolean", function(l1, l2)
+local equal_lists = typed("array, array -> boolean", function (l1, l2)
     if #l1 ~= #l2 then
         return false
     end
@@ -26,7 +26,7 @@ local equal_lists = typed("array, array -> boolean", function(l1, l2)
     return true
 end)
 
-equal_declarations = function(t1, t2)
+equal_declarations = function (t1, t2)
     if type(t1) == "string" or type(t2) == "nil" then
         return t1 == t2
     end
@@ -97,7 +97,7 @@ end
 local get_type
 local get_fields
 
-local convert_value = typed("TypeList, table -> CType?, string?", function(lst, src)
+local convert_value = typed("TypeList, table -> CType?, string?", function (lst, src)
     local name = nil
     local ret_pointer = {}
     local idxs = nil
@@ -107,7 +107,7 @@ local convert_value = typed("TypeList, table -> CType?, string?", function(lst, 
         src.ids = util.expandSingle(src.ids)
         -- FIXME multiple ids, e.g.: int *x, y, *z;
         local ok
-        ---@diagnostic disable-next-line: cast-local-type
+---@diagnostic disable-next-line: cast-local-type
         ok, name, ret_pointer, idxs = get_name(src.id or src.ids)
         if not ok then
             return nil, name
@@ -126,12 +126,12 @@ local convert_value = typed("TypeList, table -> CType?, string?", function(lst, 
     }), nil
 end)
 
-local function convert_fields(lst, field_src, fields)
+local function convert_fields(field_src, fields)
     if field_src.ids then
-        for i, id in ipairs(field_src.ids) do
+        for _, id in ipairs(field_src.ids) do
             id.type = utility.deepCopy(field_src.type)
             if id.type and id[1] then
-                for i, v in ipairs(id[1]) do
+                for _, v in ipairs(id[1]) do
                     table.insert(id.type, v)
                 end
                 if id[1].idx then
@@ -159,7 +159,7 @@ local function add_to_fields(lst, field_src, fields)
         return true
     end
 
-    if convert_fields(lst, field_src, fields) then
+    if convert_fields(field_src, fields) then
         return true
     end
     local field, err = convert_value(lst, field_src)
@@ -168,7 +168,7 @@ local function add_to_fields(lst, field_src, fields)
     end
 end
 
-get_fields = function(lst, fields_src)
+get_fields = function (lst, fields_src)
     local fields = {}
     for _, field_src in ipairs(fields_src) do
         local ok, err = add_to_fields(lst, field_src, fields)
@@ -195,7 +195,7 @@ local function getAnonymousID(t)
 end
 
 local get_composite_type = typed("TypeList, string?, string, array, string, function -> CType, string",
-    function(lst, specid, spectype, parts, partsfield, get_parts)
+    function (lst, specid, spectype, parts, partsfield, get_parts)
         local name = specid
         local key = spectype .. "@" .. (name or ctypes.TESTMODE and 'anonymous' or getAnonymousID(parts))
 
@@ -282,18 +282,18 @@ local function binop(val, fn)
     end
 end
 
-calculate = function(val)
+calculate = function (val)
     if type(val) == "string" then
         return tonumber(val)
     end
     if val.op == "+" then
-        return binop(val, function(a, b) return a + b end)
+        return binop(val, function (a, b) return a + b end)
     elseif val.op == "-" then
-        return binop(val, function(a, b) return a - b end)
+        return binop(val, function (a, b) return a - b end)
     elseif val.op == "*" then
-        return binop(val, function(a, b) return a * b end)
+        return binop(val, function (a, b) return a * b end)
     elseif val.op == "/" then
-        return binop(val, function(a, b) return a / b end)
+        return binop(val, function (a, b) return a / b end)
     else
         return val
     end
@@ -351,7 +351,7 @@ local qualifiers = {
     ["register"] = true,
 }
 
-get_type = function(lst, spec, ret_pointer)
+get_type = function (lst, spec, ret_pointer)
     local tarr = {}
     if type(spec.type) == "string" then
         spec.type = { spec.type }
@@ -398,7 +398,7 @@ local function is_void(param)
     return #param.type == 1 and param.type[1] == "void"
 end
 
-local get_params = typed("TypeList, array -> array, boolean", function(lst, params_src)
+local get_params = typed("TypeList, array -> array, boolean", function (lst, params_src)
     local params = {}
     local vararg = false
 
@@ -420,7 +420,7 @@ local get_params = typed("TypeList, array -> array, boolean", function(lst, para
     return params, vararg
 end)
 
-local register_many = function(register_item_fn, lst, ids, spec)
+local register_many = function (register_item_fn, lst, ids, spec)
     for _, id in ipairs(ids) do
         local ok, err = register_item_fn(lst, id, spec)
         if not ok then
@@ -430,7 +430,7 @@ local register_many = function(register_item_fn, lst, ids, spec)
     return true, nil
 end
 
-local register_decl_item = function(lst, id, spec)
+local register_decl_item = function (lst, id, spec)
     local ok, name, ret_pointer, idxs = get_name(id.decl)
     if not ok then
         return false, name
@@ -475,7 +475,7 @@ local register_decl_item = function(lst, id, spec)
     return true, nil
 end
 
-local register_decls = function(lst, ids, spec)
+local register_decls = function (lst, ids, spec)
     return register_many(register_decl_item, lst, ids, spec)
 end
 
@@ -495,7 +495,7 @@ local function register_static_function(lst, item)
     return true
 end
 
-local register_typedef_item = typed("TypeList, table, table -> boolean, string?", function(lst, id, spec)
+local register_typedef_item = typed("TypeList, table, table -> boolean, string?", function (lst, id, spec)
     local ok, name, ret_pointer = get_name(id.decl)
     if not ok then
         return false, name or "failed"
@@ -521,7 +521,7 @@ local register_typedef_item = typed("TypeList, table, table -> boolean, string?"
     return true, nil
 end)
 
-local register_typedefs = function(lst, item)
+local register_typedefs = function (lst, item)
     return register_many(register_typedef_item, lst, item.ids, item.spec)
 end
 
@@ -541,7 +541,7 @@ local function to_set(array)
     return set
 end
 
-ctypes.register_types = typed("{Decl} -> TypeList?, string?", function(parsed)
+ctypes.register_types = typed("{Decl} -> TypeList?, string?", function (parsed)
     local lst = typed.table("TypeList", {})
     for _, item in ipairs(parsed) do
         typed.check(item.spec, "table")

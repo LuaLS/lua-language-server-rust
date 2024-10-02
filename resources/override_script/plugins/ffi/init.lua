@@ -90,7 +90,7 @@ local constName      = 'm'
 local builder        = { switch_ast = utility.switch() }
 
 function builder:getTypeAst(name)
-    for i, asts in ipairs(self.globalAsts) do
+    for _, asts in ipairs(self.globalAsts) do
         if asts[name] then
             return asts[name]
         end
@@ -168,7 +168,7 @@ local function getArrayType(arr)
         return arr and '[]' or ''
     end
     local res = ''
-    for i, v in ipairs(arr) do
+    for _ in ipairs(arr) do
         res = res .. '[]'
     end
     return res
@@ -179,10 +179,10 @@ local function getValidName(name)
 end
 
 function builder:buildStructOrUnion(lines, tt, name)
-    lines[#lines + 1] = '---@class ' .. self:getType(name)
+    lines[#lines+1] = '---@class ' .. self:getType(name)
     for _, field in ipairs(tt.fields or {}) do
         if field.name and field.type then
-            lines[#lines + 1] = ('---@field %s %s%s'):format(getValidName(field.name), self:getType(field.type),
+            lines[#lines+1] = ('---@field %s %s%s'):format(getValidName(field.name), self:getType(field.type),
                 getArrayType(field.isarray))
         end
     end
@@ -190,20 +190,20 @@ end
 
 function builder:buildFunction(lines, tt, name)
     local param_names = {}
-    for i, param in ipairs(tt.params or {}) do
+    for _, param in ipairs(tt.params or {}) do
         local param_name = getValidName(param.name)
-        lines[#lines + 1] = ('---@param %s %s%s'):format(param_name, self:getType(param.type), getArrayType(param.idxs))
-        param_names[#param_names + 1] = param_name
+        lines[#lines+1] = ('---@param %s %s%s'):format(param_name, self:getType(param.type), getArrayType(param.idxs))
+        param_names[#param_names+1] = param_name
     end
     if tt.vararg then
-        param_names[#param_names + 1] = '...'
+        param_names[#param_names+1] = '...'
     end
     if tt.ret then
         if not self:isVoid(tt.ret) then
-            lines[#lines + 1] = ('---@return %s'):format(self:getType(tt.ret.type))
+            lines[#lines+1] = ('---@return %s'):format(self:getType(tt.ret.type))
         end
     end
-    lines[#lines + 1] = ('function m.%s(%s) end'):format(name, table.concat(param_names, ', '))
+    lines[#lines+1] = ('function m.%s(%s) end'):format(name, table.concat(param_names, ', '))
 end
 
 function builder:buildTypedef(lines, tt, name)
@@ -261,7 +261,7 @@ end
 local function pushEnumValue(enumer, name, v)
     v = tonumber(util.expandSingle(v))
     enumer[name] = v
-    enumer[#enumer + 1] = v
+    enumer[#enumer+1] = v
     return v
 end
 
@@ -286,13 +286,13 @@ function builder:buildEnum(lines, tt, name)
     end
     local alias = {}
     for k, v in pairs(enumer) do
-        alias[#alias + 1] = type(k) == 'number' and v or ([['%s']]):format(k)
+        alias[#alias+1] = type(k) == 'number' and v or ([['%s']]):format(k)
         if type(k) ~= 'number' then
-            lines[#lines + 1] = ('m.%s = %s'):format(k, v)
+            lines[#lines+1] = ('m.%s = %s'):format(k, v)
         end
     end
     if name then
-        lines[#lines + 1] = ('---@alias %s %s'):format(self:getType(name), table.concat(alias, ' | '))
+        lines[#lines+1] = ('---@alias %s %s'):format(self:getType(name), table.concat(alias, ' | '))
     end
 end
 
@@ -302,7 +302,7 @@ builder.switch_ast
     :call(builder.buildStructOrUnion)
     :case 'enum'
     :call(builder.buildEnum)
-    :case 'function'
+    : case 'function'
     :call(builder.buildFunction)
     :case 'typedef'
     :call(builder.buildTypedef)
@@ -333,7 +333,7 @@ local function compileCode(lines, asts, b)
             tt.full_name = ast.name
             lines = lines or { firstline }
             builder.switch_ast(tt.type, b, lines, tt, tt.full_name)
-            lines[#lines + 1] = '\n'
+            lines[#lines+1] = '\n'
         end
         ::continue::
     end
@@ -361,7 +361,7 @@ function m.build_single(codes, fileDir, uri)
     if not texts then
         return
     end
-    local fullPath = fileDir / ws.getRelativePath(uri)
+    local fullPath = fileDir /ws.getRelativePath(uri)
 
     if fullPath:stem():string():find '%.' then
         local newPath = fullPath:parent_path() / (fullPath:stem():string():gsub('%.', '/') .. ".lua")

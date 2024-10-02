@@ -23,7 +23,6 @@ local mathHuge     = math.huge
 local inf          = 1 / 0
 local nan          = 0 / 0
 local error        = error
-local assert       = assert
 
 local function isInteger(n)
     if mathType then
@@ -48,12 +47,10 @@ local function formatNumber(n)
     return str
 end
 
-local TAB = setmetatable({}, {
-    __index = function(self, n)
-        self[n] = stringRep('    ', n)
-        return self[n]
-    end
-})
+local TAB = setmetatable({}, { __index = function (self, n)
+    self[n] = stringRep('    ', n)
+    return self[n]
+end})
 
 local RESERVED = {
     ['and']      = true,
@@ -96,7 +93,7 @@ function m.dump(tbl, option)
     local lines = {}
     local mark = {}
     local stack = {}
-    lines[#lines + 1] = '{'
+    lines[#lines+1] = '{'
     local function unpack(tbl)
         local deep = #stack
         mark[tbl] = (mark[tbl] or 0) + 1
@@ -111,8 +108,8 @@ function m.dump(tbl, option)
         for key in pairs(tbl) do
             if type(key) == 'string' then
                 if not key:match('^[%a_][%w_]*$')
-                    or RESERVED[key]
-                    or option['longStringKey']
+                or RESERVED[key]
+                or option['longStringKey']
                 then
                     keymap[key] = ('[%q]'):format(key)
                 else
@@ -123,7 +120,7 @@ function m.dump(tbl, option)
             else
                 keymap[key] = ('["<%s>"]'):format(tostring(key))
             end
-            keys[#keys + 1] = key
+            keys[#keys+1] = key
             if option['alignment'] then
                 if #keymap[key] > alignment then
                     alignment = #keymap[key]
@@ -135,7 +132,7 @@ function m.dump(tbl, option)
             if option['sorter'] then
                 option['sorter'](keys, keymap)
             else
-                tableSort(keys, function(a, b)
+                tableSort(keys, function (a, b)
                     return keymap[a] < keymap[b]
                 end)
             end
@@ -158,34 +155,34 @@ function m.dump(tbl, option)
             local tp = type(value)
             local format = option['format'] and option['format'][key]
             if format then
-                value = format(value, unpack, deep + 1, stack)
+                value = format(value, unpack, deep+1, stack)
                 tp    = type(value)
             end
             if tp == 'table' then
                 if mark[value] and mark[value] > 0 then
-                    lines[#lines + 1] = ('%s%s%s,'):format(TAB[deep + 1], keyWord, option['loop'] or '"<Loop>"')
+                    lines[#lines+1] = ('%s%s%s,'):format(TAB[deep+1], keyWord, option['loop'] or '"<Loop>"')
                 elseif deep >= (option['deep'] or mathHuge) then
-                    lines[#lines + 1] = ('%s%s%s,'):format(TAB[deep + 1], keyWord, '"<Deep>"')
+                    lines[#lines+1] = ('%s%s%s,'):format(TAB[deep+1], keyWord, '"<Deep>"')
                 else
-                    lines[#lines + 1] = ('%s%s{'):format(TAB[deep + 1], keyWord)
-                    stack[#stack + 1] = key
+                    lines[#lines+1] = ('%s%s{'):format(TAB[deep+1], keyWord)
+                    stack[#stack+1] = key
                     unpack(value)
                     stack[#stack] = nil
-                    lines[#lines + 1] = ('%s},'):format(TAB[deep + 1])
+                    lines[#lines+1] = ('%s},'):format(TAB[deep+1])
                 end
             elseif tp == 'string' then
-                lines[#lines + 1] = ('%s%s%q,'):format(TAB[deep + 1], keyWord, value)
+                lines[#lines+1] = ('%s%s%q,'):format(TAB[deep+1], keyWord, value)
             elseif tp == 'number' then
-                lines[#lines + 1] = ('%s%s%s,'):format(TAB[deep + 1], keyWord, (option['number'] or formatNumber)(value))
+                lines[#lines+1] = ('%s%s%s,'):format(TAB[deep+1], keyWord, (option['number'] or formatNumber)(value))
             elseif tp == 'nil' then
             else
-                lines[#lines + 1] = ('%s%s%s,'):format(TAB[deep + 1], keyWord, tostring(value))
+                lines[#lines+1] = ('%s%s%s,'):format(TAB[deep+1], keyWord, tostring(value))
             end
         end
         mark[tbl] = mark[tbl] - 1
     end
     unpack(tbl)
-    lines[#lines + 1] = '}'
+    lines[#lines+1] = '}'
     return tableConcat(lines, '\r\n')
 end
 
@@ -697,21 +694,6 @@ function m.sortCallbackOfIndex(arr)
     end
 end
 
----@param datas any[]
----@param scores integer[]
----@return SortByScoreCallback
-function m.sortCallbackOfScore(datas, scores)
-    local map = {}
-    for i = 1, #datas do
-        local data = datas[i]
-        local score = scores[i]
-        map[data] = score
-    end
-    return function(v)
-        return map[v]
-    end
-end
-
 ---裁剪字符串
 ---@param str string
 ---@param mode? '"left"'|'"right"'
@@ -726,7 +708,10 @@ function m.trim(str, mode)
     return (str:match '^%s*(.-)%s*$')
 end
 
-function m.expandPath(path)
+---@param path string
+---@param env? { [string]: string }
+---@return string
+function m.expandPath(path, env)
     if path:sub(1, 1) == '~' then
         local home = getenv('HOME')
         if not home then -- has to be Windows
@@ -734,7 +719,9 @@ function m.expandPath(path)
         end
         return home .. path:sub(2)
     elseif path:sub(1, 1) == '$' then
-        path = path:gsub('%$([%w_]+)', getenv)
+        path = path:gsub('%$([%w_]+)', function (name)
+            return env and env[name] or getenv(name) or ''
+        end)
         return path
     end
     return path
@@ -838,54 +825,45 @@ function m.stringEndWith(str, tail)
 end
 
 function m.defaultTable(default)
-    return setmetatable({}, {
-        __index = function(t, k)
+    return setmetatable({}, { __index = function (t, k)
+        if k == nil then
+            return nil
+        end
+        local v = default(k)
+        t[k] = v
+        return v
+    end })
+end
+
+function m.multiTable(count, default)
+    local current
+    if default then
+        current = setmetatable({}, { __index = function (t, k)
             if k == nil then
                 return nil
             end
             local v = default(k)
             t[k] = v
             return v
-        end
-    })
-end
-
-function m.multiTable(count, default)
-    local current
-    if default then
-        current = setmetatable({}, {
-            __index = function(t, k)
-                if k == nil then
-                    return nil
-                end
-                local v = default(k)
-                t[k] = v
-                return v
-            end
-        })
+        end })
     else
-        current = setmetatable({}, {
-            __index = function(t, k)
-                if k == nil then
-                    return nil
-                end
-                local v = {}
-                t[k] = v
-                return v
+        current = setmetatable({}, { __index = function (t, k)
+            if k == nil then
+                return nil
             end
-        })
+            local v = {}
+            t[k] = v
+            return v
+        end })
     end
     for _ = 3, count do
-        local tt = current
-        current = setmetatable({}, {
-            __index = function(t, k)
-                if k == nil then
-                    return nil
-                end
-                t[k] = tt
-                return tt
+        current = setmetatable({}, { __index = function (t, k)
+            if k == nil then
+                return nil
             end
-        })
+            t[k] = current
+            return current
+        end })
     end
     return current
 end
@@ -974,6 +952,94 @@ function m.arrayMerge(a, b)
         a[#a + 1] = b[i]
     end
     return a
+end
+
+---@generic K
+---@param t { [K]: any }
+---@return K[]
+function m.keysOf(t)
+    local keys = {}
+    for k in pairs(t) do
+        keys[#keys+1] = k
+    end
+    return keys
+end
+
+---@generic V
+---@param t { [any]: V }
+---@return V[]
+function m.valuesOf(t)
+    local values = {}
+    for _, v in pairs(t) do
+        values[#values+1] = v
+    end
+    return values
+end
+
+---@param t table
+---@return integer
+function m.countTable(t)
+    local count = 0
+    for _ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+---@param arr any[]
+function m.arrayRemoveDuplicate(arr)
+    local mark = {}
+    local offset = 0
+    local len = #arr
+    for i = 1, len do
+        local v = arr[i]
+        if mark[v] then
+            offset = offset + 1
+        else
+            arr[i - offset] = v
+            mark[v] = true
+        end
+    end
+    for i = len - offset + 1, len do
+        arr[i] = nil
+    end
+end
+
+---@param ... table
+---@return table
+function m.mergeStruct(...)
+    local result
+    local copyed = {}
+
+    local function merge(a, b)
+        if copyed[b] then
+            return copyed[b]
+        end
+        if type(b) ~= 'table' then
+            return b
+        end
+        if not a then
+            a = {}
+        end
+        copyed[b] = a
+        local usedKeys = {}
+        for i, v in ipairs(b) do
+            a[#a+1] = v
+            usedKeys[i] = true
+        end
+        for k, v in pairs(b) do
+            if not usedKeys[k] then
+                a[k] = merge(a[k], v)
+            end
+        end
+        return a
+    end
+
+    for _, t in ipairs { ... } do
+        result = merge(result, t)
+    end
+
+    return result
 end
 
 return m

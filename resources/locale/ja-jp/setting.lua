@@ -278,7 +278,7 @@ config.telemetry.enable                  = -- TODO: need translate!
 Enable telemetry to send your editor information and error logs over the network. Read our privacy policy [here](https://luals.github.io/privacy/#language-server).
 ]]
 config.misc.parameters                   = -- TODO: need translate!
-'[Command line parameters](https://github.com/LuaLS/lua-telemetry-server/tree/master/method) when starting the language service in VSCode.'
+'[Command line parameters](https://github.com/LuaLS/lua-telemetry-server/tree/master/method) when starting the language server in VSCode.'
 config.misc.executablePath               = -- TODO: need translate!
 'Specify the executable path in VSCode.'
 config.language.fixIndent                = -- TODO: need translate!
@@ -301,13 +301,13 @@ When this setting is `false`, the `number|nil` type cannot be assigned to the `n
 ]]
 config.type.inferParamType               = -- TODO: need translate!
 [[
-When the parameter type is not annotated, the parameter type is inferred from the function's incoming parameters.
+When a parameter type is not annotated, it is inferred from the function's call sites.
 
 When this setting is `false`, the type of the parameter is `any` when it is not annotated.
 ]]
 config.type.checkTableShape              = -- TODO: need translate!
 [[
-对表的形状进行严格检查。
+Strictly check the shape of the table.
 ]]
 config.doc.privateName                   = -- TODO: need translate!
 'Treat specific field names as private, e.g. `m_*` means `XXX.m_id` and `XXX.m_type` are private, witch can only be accessed in the class where the definition is located.'
@@ -316,39 +316,39 @@ config.doc.protectedName                 = -- TODO: need translate!
 config.doc.packageName                   = -- TODO: need translate!
 'Treat specific field names as package, e.g. `m_*` means `XXX.m_id` and `XXX.m_type` are package, witch can only be accessed in the file where the definition is located.'
 config.diagnostics['unused-local']          = -- TODO: need translate!
-'未使用的局部变量'
+'Enable unused local variable diagnostics.'
 config.diagnostics['unused-function']       = -- TODO: need translate!
-'未使用的函数'
+'Enable unused function diagnostics.'
 config.diagnostics['undefined-global']      = -- TODO: need translate!
-'未定义的全局变量'
+'Enable undefined global variable diagnostics.'
 config.diagnostics['global-in-nil-env']     = -- TODO: need translate!
-'不能使用全局变量（ `_ENV` 被设置为了 `nil`）'
+'Enable cannot use global variables （ `_ENV` is set to `nil`） diagnostics.'
 config.diagnostics['unused-label']          = -- TODO: need translate!
-'未使用的标签'
+'Enable unused label diagnostics.'
 config.diagnostics['unused-vararg']         = -- TODO: need translate!
-'未使用的不定参数'
+'Enable unused vararg diagnostics.'
 config.diagnostics['trailing-space']        = -- TODO: need translate!
-'后置空格'
+'Enable trailing space diagnostics.'
 config.diagnostics['redefined-local']       = -- TODO: need translate!
-'重复定义的局部变量'
+'Enable redefined local variable diagnostics.'
 config.diagnostics['newline-call']          = -- TODO: need translate!
-'以 `(` 开始的新行，在语法上被解析为了上一行的函数调用'
+'Enable newline call diagnostics. Is\'s raised when a line starting with `(` is encountered, which is syntactically parsed as a function call on the previous line.'
 config.diagnostics['newfield-call']         = -- TODO: need translate!
-'在字面量表中，2行代码之间缺少分隔符，在语法上被解析为了一次索引操作'
+'Enable newfield call diagnostics. It is raised when the parenthesis of a function call appear on the following line when defining a field in a table.'
 config.diagnostics['redundant-parameter']   = -- TODO: need translate!
-'函数调用时，传入了多余的参数'
+'Enable redundant function parameter diagnostics.'
 config.diagnostics['ambiguity-1']           = -- TODO: need translate!
-'优先级歧义，如：`num or 0 + 1`，推测用户的实际期望为 `(num or 0) + 1` '
+'Enable ambiguous operator precedence diagnostics. For example, the `num or 0 + 1` expression will be suggested `(num or 0) + 1` instead.'
 config.diagnostics['lowercase-global']      = -- TODO: need translate!
-'首字母小写的全局变量定义'
+'Enable lowercase global variable definition diagnostics.'
 config.diagnostics['undefined-env-child']   = -- TODO: need translate!
-'`_ENV` 被设置为了新的字面量表，但是试图获取的全局变量不再这张表中'
+'Enable undefined environment variable diagnostics. It\'s raised when `_ENV` table is set to a new literal table, but the used global variable is no longer present in the global environment.'
 config.diagnostics['duplicate-index']       = -- TODO: need translate!
-'在字面量表中重复定义了索引'
+'Enable duplicate table index diagnostics.'
 config.diagnostics['empty-block']           = -- TODO: need translate!
-'空代码块'
+'Enable empty code block diagnostics.'
 config.diagnostics['redundant-value']       = -- TODO: need translate!
-'赋值操作时，值的数量比被赋值的对象多'
+'Enable the redundant values assigned diagnostics. It\'s raised during assignment operation, when the number of values is higher than the number of objects being assigned.'
 config.diagnostics['assign-type-mismatch']  = -- TODO: need translate!
 'Enable diagnostics for assignments in which the value\'s type does not match the type of the assigned variable.'
 config.diagnostics['await-in-sync']         = -- TODO: need translate!
@@ -383,7 +383,7 @@ config.diagnostics['duplicate-doc-param']   = -- TODO: need translate!
 'Enable diagnostics for a duplicated param annotation name.'
 config.diagnostics['duplicate-set-field']   = -- TODO: need translate!
 'Enable diagnostics for setting the same field in a class more than once.'
-config.diagnostics['incomplete-signature-doc'] = -- TODO: need translate!
+config.diagnostics['incomplete-signature-doc']    = -- TODO: need translate!
 'Incomplete @param or @return annotations for functions.'
 config.diagnostics['invisible']             = -- TODO: need translate!
 'Enable diagnostics for accesses to fields which are invisible.'

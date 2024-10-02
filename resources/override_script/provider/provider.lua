@@ -1,25 +1,24 @@
-local util      = require 'utility'
-local cap       = require 'provider.capability'
-local await     = require 'await'
-local files     = require 'files'
-local proto     = require 'proto.proto'
-local define    = require 'proto.define'
-local workspace = require 'workspace'
-local config    = require 'config'
-local client    = require 'client'
-local pub       = require 'pub'
-local lang      = require 'language'
-local progress  = require 'progress'
-local tm        = require 'text-merger'
-local cfgLoader = require 'config.loader'
-local converter = require 'proto.converter'
-local filewatch = require 'filewatch'
-local json      = require 'json'
-local scope     = require 'workspace.scope'
-local furi      = require 'file-uri'
-local inspect   = require 'inspect'
-local guide     = require 'parser.guide'
-local fs        = require 'bee.filesystem'
+local util       = require 'utility'
+local cap        = require 'provider.capability'
+local await      = require 'await'
+local files      = require 'files'
+local proto      = require 'proto.proto'
+local define     = require 'proto.define'
+local workspace  = require 'workspace'
+local config     = require 'config'
+local client     = require 'client'
+local lang       = require 'language'
+local progress   = require 'progress'
+local tm         = require 'text-merger'
+local cfgLoader  = require 'config.loader'
+local converter  = require 'proto.converter'
+local filewatch  = require 'filewatch'
+local json       = require 'json'
+local scope      = require 'workspace.scope'
+local furi       = require 'file-uri'
+local inspect    = require 'inspect'
+local guide      = require 'parser.guide'
+local fs         = require 'bee.filesystem'
 
 require 'library'
 
@@ -81,7 +80,7 @@ function m.register(method)
     end
 end
 
-filewatch.event(function(ev, path) ---@async
+filewatch.event(function (_ev, path) ---@async
     if (CONFIGPATH and util.stringEndWith(path, CONFIGPATH)) then
         for _, scp in ipairs(workspace.folders) do
             local configPath = workspace.getAbsolutePath(scp.uri, CONFIGPATH)
@@ -1636,10 +1635,11 @@ local function refreshLanguageConfiguration()
     if not client.getOption('languageConfiguration') then
         return
     end
-    proto.notify('$/languageConfiguration', require 'provider.language-configuration')
+    local lc = require 'provider.language-configuration'
+    proto.notify('$/languageConfiguration', lc.make())
 end
 
-config.watch(function(uri, key, value)
+config.watch(function (_uri, key, _value)
     if key == '' then
         refreshLanguageConfiguration()
     end
@@ -1663,9 +1663,9 @@ local function refreshStatusBar()
     end
 end
 
-config.watch(function(uri, key, value)
+config.watch(function (_uri, key, _value)
     if key == 'Lua.window.statusBar'
-        or key == '' then
+    or key == '' then
         refreshStatusBar()
     end
 end)

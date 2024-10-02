@@ -1,5 +1,5 @@
-local error            = error
-local type             = type
+local error        = error
+local type         = type
 
 ---@class parser.object
 ---@field bindDocs              parser.object[]
@@ -84,15 +84,15 @@ local type             = type
 
 ---@class guide
 ---@field debugMode boolean
-local m                = {}
+local m = {}
 
-m.ANY                  = { "<ANY>" }
+m.ANY = {"<ANY>"}
 
-m.notNamePattern       = '[^%w_\x80-\xff]'
-m.namePattern          = '[%a_\x80-\xff][%w_\x80-\xff]*'
-m.namePatternFull      = '^' .. m.namePattern .. '$'
+m.notNamePattern  = '[^%w_\x80-\xff]'
+m.namePattern     = '[%a_\x80-\xff][%w_\x80-\xff]*'
+m.namePatternFull = '^' .. m.namePattern .. '$'
 
-local blockTypes       = {
+local blockTypes = {
     ['while']       = true,
     ['in']          = true,
     ['loop']        = true,
@@ -106,9 +106,9 @@ local blockTypes       = {
     ['main']        = true,
 }
 
-m.blockTypes           = blockTypes
+m.blockTypes = blockTypes
 
-local topBlockTypes    = {
+local topBlockTypes = {
     ['while']       = true,
     ['function']    = true,
     ['if']          = true,
@@ -118,99 +118,98 @@ local topBlockTypes    = {
     ['main']        = true,
 }
 
-local breakBlockTypes  = {
-    ['while']  = true,
-    ['in']     = true,
-    ['loop']   = true,
-    ['repeat'] = true,
-    ['for']    = true,
+local breakBlockTypes = {
+    ['while']       = true,
+    ['in']          = true,
+    ['loop']        = true,
+    ['repeat']      = true,
+    ['for']         = true,
 }
 
-local childMap         = {
-    ['main']               = { '#', 'docs' },
-    ['repeat']             = { '#', 'filter' },
-    ['while']              = { 'filter', '#' },
-    ['in']                 = { 'keys', 'exps', '#' },
-    ['loop']               = { 'loc', 'init', 'max', 'step', '#' },
-    ['do']                 = { '#' },
-    ['if']                 = { '#' },
-    ['ifblock']            = { 'filter', '#' },
-    ['elseifblock']        = { 'filter', '#' },
-    ['elseblock']          = { '#' },
-    ['setfield']           = { 'node', 'field', 'value' },
-    ['getfield']           = { 'node', 'field' },
-    ['setmethod']          = { 'node', 'method', 'value' },
-    ['getmethod']          = { 'node', 'method' },
-    ['setindex']           = { 'node', 'index', 'value' },
-    ['getindex']           = { 'node', 'index' },
-    ['tableindex']         = { 'index', 'value' },
-    ['tablefield']         = { 'field', 'value' },
-    ['tableexp']           = { 'value' },
-    ['setglobal']          = { 'value' },
-    ['local']              = { 'attrs', 'value' },
-    ['setlocal']           = { 'value' },
-    ['return']             = { '#' },
-    ['select']             = { 'vararg' },
-    ['table']              = { '#' },
-    ['function']           = { 'args', '#' },
-    ['funcargs']           = { '#' },
-    ['paren']              = { 'exp' },
-    ['call']               = { 'node', 'args' },
-    ['callargs']           = { '#' },
-    ['list']               = { '#' },
-    ['binary']             = { 1, 2 },
-    ['unary']              = { 1 },
+local childMap = {
+    ['main']        = {'#', 'docs'},
+    ['repeat']      = {'#', 'filter'},
+    ['while']       = {'filter', '#'},
+    ['in']          = {'keys', 'exps', '#'},
+    ['loop']        = {'loc', 'init', 'max', 'step', '#'},
+    ['do']          = {'#'},
+    ['if']          = {'#'},
+    ['ifblock']     = {'filter', '#'},
+    ['elseifblock'] = {'filter', '#'},
+    ['elseblock']   = {'#'},
+    ['setfield']    = {'node', 'field', 'value'},
+    ['getfield']    = {'node', 'field'},
+    ['setmethod']   = {'node', 'method', 'value'},
+    ['getmethod']   = {'node', 'method'},
+    ['setindex']    = {'node', 'index', 'value'},
+    ['getindex']    = {'node', 'index'},
+    ['tableindex']  = {'index', 'value'},
+    ['tablefield']  = {'field', 'value'},
+    ['tableexp']    = {'value'},
+    ['setglobal']   = {'value'},
+    ['local']       = {'attrs', 'value'},
+    ['setlocal']    = {'value'},
+    ['return']      = {'#'},
+    ['select']      = {'vararg'},
+    ['table']       = {'#'},
+    ['function']    = {'args', '#'},
+    ['funcargs']    = {'#'},
+    ['paren']       = {'exp'},
+    ['call']        = {'node', 'args'},
+    ['callargs']    = {'#'},
+    ['list']        = {'#'},
+    ['binary']      = {1, 2},
+    ['unary']       = {1},
 
-    ['doc']                = { '#' },
-    ['doc.class']          = { 'class', '#extends', '#signs', 'docAttr', 'comment' },
-    ['doc.type']           = { '#types', 'name', 'comment' },
-    ['doc.alias']          = { 'alias', 'docAttr', 'extends', 'comment' },
-    ['doc.enum']           = { 'enum', 'extends', 'comment', 'docAttr' },
-    ['doc.param']          = { 'param', 'extends', 'comment' },
-    ['doc.return']         = { '#returns', 'comment' },
-    ['doc.field']          = { 'field', 'extends', 'comment' },
-    ['doc.generic']        = { '#generics', 'comment' },
-    ['doc.generic.object'] = { 'generic', 'extends', 'comment' },
-    ['doc.vararg']         = { 'vararg', 'comment' },
-    ['doc.type.array']     = { 'node' },
-    ['doc.type.function']  = { '#args', '#returns', 'comment' },
-    ['doc.type.table']     = { '#fields', 'comment' },
-    ['doc.type.literal']   = { 'node' },
-    ['doc.type.arg']       = { 'name', 'extends' },
-    ['doc.type.field']     = { 'name', 'extends' },
-    ['doc.type.sign']      = { 'node', '#signs' },
-    ['doc.overload']       = { 'overload', 'comment' },
-    ['doc.see']            = { 'name', 'comment' },
-    ['doc.version']        = { '#versions' },
-    ['doc.diagnostic']     = { '#names' },
-    ['doc.as']             = { 'as' },
-    ['doc.cast']           = { 'name', '#casts' },
-    ['doc.cast.block']     = { 'extends' },
-    ['doc.operator']       = { 'op', 'exp', 'extends' },
-    ['doc.meta']           = { 'name' },
-    ['doc.attr']           = { '#names' },
+    ['doc']                = {'#'},
+    ['doc.class']          = {'class', '#extends', '#signs', 'docAttr', 'comment'},
+    ['doc.type']           = {'#types', 'name', 'comment'},
+    ['doc.alias']          = {'alias', 'docAttr', 'extends', 'comment'},
+    ['doc.enum']           = {'enum', 'extends', 'comment', 'docAttr'},
+    ['doc.param']          = {'param', 'extends', 'comment'},
+    ['doc.return']         = {'#returns', 'comment'},
+    ['doc.field']          = {'field', 'extends', 'comment'},
+    ['doc.generic']        = {'#generics', 'comment'},
+    ['doc.generic.object'] = {'generic', 'extends', 'comment'},
+    ['doc.vararg']         = {'vararg', 'comment'},
+    ['doc.type.array']     = {'node'},
+    ['doc.type.function']  = {'#args', '#returns', 'comment'},
+    ['doc.type.table']     = {'#fields', 'comment'},
+    ['doc.type.literal']   = {'node'},
+    ['doc.type.arg']       = {'name', 'extends'},
+    ['doc.type.field']     = {'name', 'extends'},
+    ['doc.type.sign']      = {'node', '#signs'},
+    ['doc.overload']       = {'overload', 'comment'},
+    ['doc.see']            = {'name', 'comment'},
+    ['doc.version']        = {'#versions'},
+    ['doc.diagnostic']     = {'#names'},
+    ['doc.as']             = {'as'},
+    ['doc.cast']           = {'name', '#casts'},
+    ['doc.cast.block']     = {'extends'},
+    ['doc.operator']       = {'op', 'exp', 'extends'},
+    ['doc.meta']           = {'name'},
+    ['doc.attr']           = {'#names'},
 }
 
 ---@type table<string, fun(obj: parser.object, list: parser.object[])>
-local compiledChildMap = setmetatable({}, {
-    __index = function(self, name)
-        local defs = childMap[name]
-        if not defs then
-            self[name] = false
-            return false
-        end
-        local text = {}
-        text[#text + 1] = 'local obj, list = ...'
-        for _, def in ipairs(defs) do
-            if def == '#' then
-                text[#text + 1] = [[
+local compiledChildMap = setmetatable({}, {__index = function (self, name)
+    local defs = childMap[name]
+    if not defs then
+        self[name] = false
+        return false
+    end
+    local text = {}
+    text[#text+1] = 'local obj, list = ...'
+    for _, def in ipairs(defs) do
+        if def == '#' then
+            text[#text+1] = [[
 for i = 1, #obj do
     list[#list+1] = obj[i]
 end
 ]]
-            elseif type(def) == 'string' and def:sub(1, 1) == '#' then
-                local key = def:sub(2)
-                text[#text + 1] = ([[
+        elseif type(def) == 'string' and def:sub(1, 1) == '#' then
+            local key = def:sub(2)
+            text[#text+1] = ([[
 local childs = obj.%s
 if childs then
     for i = 1, #childs do
@@ -218,38 +217,36 @@ if childs then
     end
 end
 ]]):format(key)
-            elseif type(def) == 'string' then
-                text[#text + 1] = ('list[#list+1] = obj.%s'):format(def)
-            else
-                text[#text + 1] = ('list[#list+1] = obj[%q]'):format(def)
-            end
+        elseif type(def) == 'string' then
+            text[#text+1] = ('list[#list+1] = obj.%s'):format(def)
+        else
+            text[#text+1] = ('list[#list+1] = obj[%q]'):format(def)
         end
-        local buf = table.concat(text, '\n')
-        local f = load(buf, buf, 't')
-        self[name] = f
-        return f
     end
-})
+    local buf = table.concat(text, '\n')
+    local f = load(buf, buf, 't')
+    self[name] = f
+    return f
+end})
 
-local eachChildMap     = setmetatable({}, {
-    __index = function(self, name)
-        local defs = childMap[name]
-        if not defs then
-            self[name] = false
-            return false
-        end
-        local text = {}
-        text[#text + 1] = 'local obj, callback = ...'
-        for _, def in ipairs(defs) do
-            if def == '#' then
-                text[#text + 1] = [[
+local eachChildMap = setmetatable({}, {__index = function (self, name)
+    local defs = childMap[name]
+    if not defs then
+        self[name] = false
+        return false
+    end
+    local text = {}
+    text[#text+1] = 'local obj, callback = ...'
+    for _, def in ipairs(defs) do
+        if def == '#' then
+            text[#text+1] = [[
 for i = 1, #obj do
     callback(obj[i])
 end
 ]]
-            elseif type(def) == 'string' and def:sub(1, 1) == '#' then
-                local key = def:sub(2)
-                text[#text + 1] = ([[
+        elseif type(def) == 'string' and def:sub(1, 1) == '#' then
+            local key = def:sub(2)
+            text[#text+1] = ([[
 local childs = obj.%s
 if childs then
     for i = 1, #childs do
@@ -257,32 +254,31 @@ if childs then
     end
 end
 ]]):format(key)
-            elseif type(def) == 'string' then
-                text[#text + 1] = ('callback(obj.%s)'):format(def)
-            else
-                text[#text + 1] = ('callback(obj[%q])'):format(def)
-            end
+        elseif type(def) == 'string' then
+            text[#text+1] = ('callback(obj.%s)'):format(def)
+        else
+            text[#text+1] = ('callback(obj[%q])'):format(def)
         end
-        local buf = table.concat(text, '\n')
-        local f = load(buf, buf, 't')
-        self[name] = f
-        return f
     end
-})
+    local buf = table.concat(text, '\n')
+    local f = load(buf, buf, 't')
+    self[name] = f
+    return f
+end})
 
-m.actionMap            = {
-    ['main']        = { '#' },
-    ['repeat']      = { '#' },
-    ['while']       = { '#' },
-    ['in']          = { '#' },
-    ['loop']        = { '#' },
-    ['if']          = { '#' },
-    ['ifblock']     = { '#' },
-    ['elseifblock'] = { '#' },
-    ['elseblock']   = { '#' },
-    ['do']          = { '#' },
-    ['function']    = { '#' },
-    ['funcargs']    = { '#' },
+m.actionMap = {
+    ['main']        = {'#'},
+    ['repeat']      = {'#'},
+    ['while']       = {'#'},
+    ['in']          = {'#'},
+    ['loop']        = {'#'},
+    ['if']          = {'#'},
+    ['ifblock']     = {'#'},
+    ['elseifblock'] = {'#'},
+    ['elseblock']   = {'#'},
+    ['do']          = {'#'},
+    ['function']    = {'#'},
+    ['funcargs']    = {'#'},
 }
 
 --- 是否是字面量
@@ -353,7 +349,7 @@ function m.getBlock(obj)
     -- make stack
     local stack = {}
     for _ = 1, 10 do
-        stack[#stack + 1] = ('%s:%s'):format(obj.type, obj.finish)
+        stack[#stack+1] = ('%s:%s'):format(obj.type, obj.finish)
         obj = obj.parent
         if not obj then
             break
@@ -511,17 +507,17 @@ function m.getLocal(source, name, pos)
         if block.type == 'main' then
             break
         end
-        if block.start <= pos
-            and block.finish >= pos
-            and blockTypes[block.type] then
+        if  block.start <= pos
+        and block.finish >= pos
+        and blockTypes[block.type] then
             break
         end
         block = block.parent
     end
 
-    m.eachSourceContain(block, pos, function(src)
-        if blockTypes[src.type]
-            and (src.finish - src.start) < (block.finish - src.start) then
+    m.eachSourceContain(block, pos, function (src)
+        if  blockTypes[src.type]
+        and (src.finish - src.start) < (block.finish - src.start) then
             block = src
         end
     end)
@@ -533,8 +529,8 @@ function m.getLocal(source, name, pos)
         local res
         if block.locals then
             for _, loc in ipairs(block.locals) do
-                if loc[1] == name
-                    and loc.effect <= pos then
+                if  loc[1] == name
+                and loc.effect <= pos then
                     if not res or res.effect < loc.effect then
                         res = loc
                     end
@@ -552,7 +548,7 @@ end
 --- 获取指定区块中所有的可见局部变量名称
 function m.getVisibleLocals(block, pos)
     local result = {}
-    m.eachSourceContain(m.getRoot(block), pos, function(source)
+    m.eachSourceContain(m.getRoot(block), pos, function (source)
         local locals = source.locals
         if locals then
             for i = 1, #locals do
@@ -602,16 +598,16 @@ function m.getStartFinish(source)
         if not first then
             return nil, nil
         end
-        local last = source[#source]
-        start      = first.start
-        finish     = last.finish
+        local last  = source[#source]
+        start  = first.start
+        finish = last.finish
     end
     return start, finish
 end
 
 function m.getRange(source)
     local start  = source.vstart or source.start
-    local finish = source.range or source.finish
+    local finish = source.range  or source.finish
     if source.bfinish and source.bfinish > finish then
         finish = source.bfinish
     end
@@ -620,9 +616,9 @@ function m.getRange(source)
         if not first then
             return nil, nil
         end
-        local last = source[#source]
-        start      = first.vstart or first.start
-        finish     = last.range or last.finish
+        local last  = source[#source]
+        start  = first.vstart or first.start
+        finish = last.range   or last.finish
     end
     return start, finish
 end
@@ -736,7 +732,7 @@ local function getSourceTypeCache(ast)
     if not cache then
         cache = {}
         ast._typeCache = cache
-        m.eachSource(ast, function(source)
+        m.eachSource(ast, function (source)
             local tp = source.type
             if not tp then
                 return
@@ -746,7 +742,7 @@ local function getSourceTypeCache(ast)
                 myCache = {}
                 cache[tp] = myCache
             end
-            myCache[#myCache + 1] = source
+            myCache[#myCache+1] = source
         end)
     end
     return cache
@@ -754,12 +750,12 @@ end
 
 --- 遍历所有指定类型的source
 ---@param ast parser.object
----@param type string
+---@param ty string
 ---@param callback fun(src: parser.object): any
 ---@return any
-function m.eachSourceType(ast, type, callback)
+function m.eachSourceType(ast, ty, callback)
     local cache = getSourceTypeCache(ast)
-    local myCache = cache[type]
+    local myCache = cache[ty]
     if not myCache then
         return
     end
@@ -909,7 +905,7 @@ function m.offsetToPositionByLines(lines, offset)
         if start > offset then
             right = row
         else
-            left = row
+            left  = row
         end
     end
     local col = offset - lines[row] + 1
@@ -935,26 +931,26 @@ function m.getLineRange(state, row)
 end
 
 local assignTypeMap = {
-    ['setglobal']      = true,
-    ['local']          = true,
-    ['self']           = true,
-    ['setlocal']       = true,
-    ['setfield']       = true,
-    ['setmethod']      = true,
-    ['setindex']       = true,
-    ['tablefield']     = true,
-    ['tableindex']     = true,
-    ['label']          = true,
-    ['doc.class']      = true,
-    ['doc.alias']      = true,
-    ['doc.enum']       = true,
-    ['doc.field']      = true,
-    ['doc.class.name'] = true,
-    ['doc.alias.name'] = true,
-    ['doc.enum.name']  = true,
-    ['doc.field.name'] = true,
-    ['doc.type.field'] = true,
-    ['doc.type.array'] = true,
+    ['setglobal']         = true,
+    ['local']             = true,
+    ['self']              = true,
+    ['setlocal']          = true,
+    ['setfield']          = true,
+    ['setmethod']         = true,
+    ['setindex']          = true,
+    ['tablefield']        = true,
+    ['tableindex']        = true,
+    ['label']             = true,
+    ['doc.class']         = true,
+    ['doc.alias']         = true,
+    ['doc.enum']          = true,
+    ['doc.field']         = true,
+    ['doc.class.name']    = true,
+    ['doc.alias.name']    = true,
+    ['doc.enum.name']     = true,
+    ['doc.field.name']    = true,
+    ['doc.type.field']    = true,
+    ['doc.type.array']    = true,
 }
 function m.isAssign(source)
     local tp = source.type
@@ -1004,15 +1000,15 @@ function m.getKeyNameOfLiteral(obj)
     end
     local tp = obj.type
     if tp == 'field'
-        or tp == 'method' then
+    or     tp == 'method' then
         return obj[1]
     elseif tp == 'string'
-        or tp == 'number'
-        or tp == 'integer'
-        or tp == 'boolean'
-        or tp == 'doc.type.integer'
-        or tp == 'doc.type.string'
-        or tp == 'doc.type.boolean' then
+    or     tp == 'number'
+    or     tp == 'integer'
+    or     tp == 'boolean'
+    or     tp == 'doc.type.integer'
+    or     tp == 'doc.type.string'
+    or     tp == 'doc.type.boolean' then
         return obj[1]
     end
 end
@@ -1024,32 +1020,32 @@ function m.getKeyName(obj)
     end
     local tp = obj.type
     if tp == 'getglobal'
-        or tp == 'setglobal' then
+    or tp == 'setglobal' then
         return obj[1]
     elseif tp == 'local'
-        or tp == 'self'
-        or tp == 'getlocal'
-        or tp == 'setlocal' then
+    or     tp == 'self'
+    or     tp == 'getlocal'
+    or     tp == 'setlocal' then
         return obj[1]
     elseif tp == 'getfield'
-        or tp == 'setfield'
-        or tp == 'tablefield' then
+    or     tp == 'setfield'
+    or     tp == 'tablefield' then
         if obj.field then
             return obj.field[1]
         end
     elseif tp == 'getmethod'
-        or tp == 'setmethod' then
+    or     tp == 'setmethod' then
         if obj.method then
             return obj.method[1]
         end
     elseif tp == 'getindex'
-        or tp == 'setindex'
-        or tp == 'tableindex' then
+    or     tp == 'setindex'
+    or     tp == 'tableindex' then
         return m.getKeyNameOfLiteral(obj.index)
     elseif tp == 'tableexp' then
         return obj.tindex
     elseif tp == 'field'
-        or tp == 'method' then
+    or     tp == 'method' then
         return obj[1]
     elseif tp == 'doc.class' then
         return obj.class[1]
@@ -1060,11 +1056,11 @@ function m.getKeyName(obj)
     elseif tp == 'doc.field' then
         return obj.field[1]
     elseif tp == 'doc.field.name'
-        or tp == 'doc.type.name'
-        or tp == 'doc.class.name'
-        or tp == 'doc.alias.name'
-        or tp == 'doc.enum.name'
-        or tp == 'doc.extends.name' then
+    or     tp == 'doc.type.name'
+    or     tp == 'doc.class.name'
+    or     tp == 'doc.alias.name'
+    or     tp == 'doc.enum.name'
+    or     tp == 'doc.extends.name' then
         return obj[1]
     elseif tp == 'doc.type.field' then
         return m.getKeyName(obj.name)
@@ -1078,7 +1074,7 @@ function m.getKeyTypeOfLiteral(obj)
     end
     local tp = obj.type
     if tp == 'field'
-        or tp == 'method' then
+    or     tp == 'method' then
         return 'string'
     elseif tp == 'string' then
         return 'string'
@@ -1097,28 +1093,28 @@ function m.getKeyType(obj)
     end
     local tp = obj.type
     if tp == 'getglobal'
-        or tp == 'setglobal' then
+    or tp == 'setglobal' then
         return 'string'
     elseif tp == 'local'
-        or tp == 'self'
-        or tp == 'getlocal'
-        or tp == 'setlocal' then
+    or     tp == 'self'
+    or     tp == 'getlocal'
+    or     tp == 'setlocal' then
         return 'local'
     elseif tp == 'getfield'
-        or tp == 'setfield'
-        or tp == 'tablefield' then
+    or     tp == 'setfield'
+    or     tp == 'tablefield' then
         return 'string'
     elseif tp == 'getmethod'
-        or tp == 'setmethod' then
+    or     tp == 'setmethod' then
         return 'string'
     elseif tp == 'getindex'
-        or tp == 'setindex'
-        or tp == 'tableindex' then
+    or     tp == 'setindex'
+    or     tp == 'tableindex' then
         return m.getKeyTypeOfLiteral(obj.index)
     elseif tp == 'tableexp' then
         return 'integer'
     elseif tp == 'field'
-        or tp == 'method' then
+    or     tp == 'method' then
         return 'string'
     elseif tp == 'doc.class' then
         return 'string'
@@ -1153,16 +1149,16 @@ function m.isGlobal(source)
         return true
     end
     if source.type == 'setglobal'
-        or source.type == 'getglobal' then
+    or source.type == 'getglobal' then
         if source.node and source.node.tag == '_ENV' then
             source._isGlobal = true
             return true
         end
     end
     if source.type == 'setfield'
-        or source.type == 'getfield'
-        or source.type == 'setindex'
-        or source.type == 'getindex' then
+    or source.type == 'getfield'
+    or source.type == 'setindex'
+    or source.type == 'getindex' then
         local current = source
         while current do
             local node = current.node
@@ -1182,7 +1178,7 @@ function m.isGlobal(source)
     if source.type == 'call' then
         local node = source.node
         if node.special == 'rawget'
-            or node.special == 'rawset' then
+        or node.special == 'rawset' then
             if source.args and source.args[1] then
                 local isGlobal = source.args[1].special == '_G'
                 source._isGlobal = isGlobal
@@ -1195,9 +1191,9 @@ function m.isGlobal(source)
 end
 
 function m.isInString(ast, position)
-    return m.eachSourceContain(ast, position, function(source)
-        if source.type == 'string'
-            and source.start < position then
+    return m.eachSourceContain(ast, position, function (source)
+        if  source.type == 'string'
+        and source.start < position then
             return true
         end
     end)
@@ -1214,12 +1210,12 @@ end
 
 function m.isOOP(source)
     if source.type == 'setmethod'
-        or source.type == 'getmethod' then
+    or source.type == 'getmethod' then
         return true
     end
     if source.type == 'method'
-        or source.type == 'field'
-        or source.type == 'function' then
+    or source.type == 'field'
+    or source.type == 'function' then
         return m.isOOP(source.parent)
     end
     return false
@@ -1257,7 +1253,7 @@ end
 ---@return parser.object?
 function m.getSelfNode(source)
     if source.type == 'getlocal'
-        or source.type == 'setlocal' then
+    or source.type == 'setlocal' then
         source = source.node
     end
     if source.type ~= 'self' then
@@ -1289,7 +1285,7 @@ function m.getFunctionSelfNode(func)
     end
     local parent = func.parent
     if parent.type == 'setmethod'
-        or parent.type == 'setfield' then
+    or parent.type == 'setfield' then
         return parent.node
     end
     return nil
@@ -1314,8 +1310,8 @@ end
 ---@param source parser.object
 ---@return boolean
 function m.isParam(source)
-    if source.type ~= 'local'
-        and source.type ~= 'self' then
+    if  source.type ~= 'local'
+    and source.type ~= 'self' then
         return false
     end
     if source.parent.type ~= 'funcargs' then
