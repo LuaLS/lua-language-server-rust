@@ -90,7 +90,7 @@ jobs:
           tar -czf lua-language-server-linux-aarch64.tar.gz  -C lua-language-server-linux-arm64 .
           chmod +x lua-language-server-linux-musl/lua-language-server
           tar -czf lua-language-server-linux-musl.tar.gz  -C lua-language-server-linux-musl .
-          chmod +x lua-language-server-linux-bsd/lua-language-server
+          chmod +x lua-language-server-darwin-x64/lua-language-server
           tar -czf lua-language-server-darwin-x64.tar.gz  -C lua-language-server-darwin-x64 .
           chmod +x lua-language-server-darwin-arm64/lua-language-server
           tar -czf lua-language-server-darwin-arm64.tar.gz  -C lua-language-server-darwin-arm64 .

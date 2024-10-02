@@ -37,7 +37,13 @@ cargo build --release -p luals
 
 To publish the project, run: 
 
+On Windows:
 ```bash
 ./publish/WinPublish.ps1
+```
+
+On other systems:
+```bash
+./publish/UnixPublish.sh
 ```
 will package the compiled files and related resource files into the `dist` directory
