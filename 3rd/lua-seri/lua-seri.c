@@ -1,6 +1,10 @@
 /*
 	modify from https://github.com/cloudwu/lua-serialize
  */
+/*
+* patch for luajit by CppCXY
+*/
+
 
 #ifdef TEST_SERI
 
@@ -14,6 +18,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <string.h>
+#include "luajit-patch.h"
 
 #define TYPE_BOOLEAN 0
 
@@ -269,7 +274,7 @@ static void pack_one(lua_State *L, struct write_block *b, int index);
 
 static int
 wb_table_array(lua_State *L, struct write_block * wb, int index) {
-	int array_size = (int)lua_rawlen(L,index);
+	int array_size = (int)common_lua_rawlen(L,index);
 	if (array_size >= EXTEND_NUMBER) {
 		uint8_t n = COMBINE_TYPE(TYPE_TABLE, EXTEND_NUMBER);
 		wb_push(wb, &n, 1);
@@ -294,7 +299,7 @@ wb_table_hash(lua_State *L, struct write_block * wb, int index, int array_size) 
 	lua_pushnil(L);
 	while (lua_next(L, index) != 0) {
 		if (lua_type(L,-2) == LUA_TNUMBER) {
-			if (lua_isinteger(L, -2)) {
+			if (common_lua_isinteger(L, -2)) {
 				lua_Integer x = lua_tointeger(L,-2);
 				if (x>0 && x<=array_size) {
 					lua_pop(L,1);
@@ -346,7 +351,7 @@ mark_table(lua_State *L, struct write_block *b, int index) {
 		int i;
 		for (i=0;i<MAX_REFERENCE;i++) {
 			lua_pushinteger(L, i+1);
-			lua_rawsetp(L, s->ref_index, b->r[i].object);
+			common_lua_rawsetp(L, s->ref_index, b->r[i].object);
 			if (b->r[i].address) {
 				lua_pushlightuserdata(L, (void *)b->r[i].address);
 				lua_rawseti(L, s->ref_index+1, i+1);
@@ -359,7 +364,7 @@ mark_table(lua_State *L, struct write_block *b, int index) {
 	} else {
 		++id;
 		lua_pushinteger(L, id);
-		lua_rawsetp(L, s->ref_index, obj);
+		common_lua_rawsetp(L, s->ref_index, obj);
 		lua_pushlightuserdata(L, addr);
 		lua_rawseti(L, s->ref_index + 1, id);
 	}
@@ -420,13 +425,13 @@ lookup_ref(lua_State *L, struct write_block *b, const void *obj) {
 		}
 		return 0;
 	} else {
-		if (lua_rawgetp(L, b->s.ref_index, obj) != LUA_TNUMBER) {
+		if (common_lua_rawgetp(L, b->s.ref_index, obj) != LUA_TNUMBER) {
 			lua_pop(L, 1);
 			return 0;
 		}
 		int id = lua_tointeger(L, -1);
 		lua_pop(L, 1);
-		if (lua_rawgeti(L, b->s.ref_index + 1, id) == LUA_TLIGHTUSERDATA) {
+		if (common_lua_rawgeti(L, b->s.ref_index + 1, id) == LUA_TLIGHTUSERDATA) {
 			uint8_t * tag = (uint8_t *)lua_touserdata(L, -1);
 			lua_pop(L, 1);
 			change_mark(tag);
@@ -462,7 +467,7 @@ pack_one(lua_State *L, struct write_block *b, int index) {
 		wb_nil(b);
 		break;
 	case LUA_TNUMBER: {
-		if (lua_isinteger(L, index)) {
+		if (common_lua_isinteger(L, index)) {
 			lua_Integer x = lua_tointeger(L,index);
 			wb_integer(b, x);
 		} else {
@@ -666,7 +671,7 @@ unpack_ref(lua_State *L, struct read_block *rb, int ref) {
 	struct stack *s = &rb->s;
 	if (ref == EXTEND_NUMBER) {
 		int id = get_extend_integer(L, rb);
-		if (lua_type(L, s->ref_index) != LUA_TTABLE || lua_rawgeti(L, s->ref_index, id) != LUA_TTABLE) {
+		if (lua_type(L, s->ref_index) != LUA_TTABLE || common_lua_rawgeti(L, s->ref_index, id) != LUA_TTABLE) {
 			luaL_error(L, "Invalid ref object id %d", id);
 		}
 	} else {

@@ -1,6 +1,5 @@
 local files    = require 'files'
 local lang     = require 'language'
-local define   = require 'proto.define'
 local guide    = require 'parser.guide'
 local vm       = require 'vm'
 local await    = require 'await'
@@ -24,7 +23,6 @@ local function getTopFunctionOfIf(source)
         end
         source = source.parent
     end
-    return nil
 end
 
 ---@async
@@ -66,6 +64,12 @@ return function (uri, callback)
             end
             local defValue = vm.getObjectValue(def)
             if not defValue or defValue.type ~= 'function' then
+                goto CONTINUE
+            end
+            if vm.getDefinedClass(guide.getUri(def), def.node)
+            and not vm.getDefinedClass(guide.getUri(src), src.node)
+            then
+                -- allow type variable to override function defined in class variable
                 goto CONTINUE
             end
             callback {

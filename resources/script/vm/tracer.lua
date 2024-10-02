@@ -256,6 +256,44 @@ function mt:fastWardCasts(pos, node)
     return node
 end
 
+--- Return types of source which have a field with the value of literal.
+--- @param uri uri
+--- @param source parser.object
+--- @param fieldName string
+--- @param literal parser.object
+--- @return [string, boolean][]?
+local function getNodeTypesWithLiteralField(uri, source, fieldName, literal)
+    local loc = vm.getVariable(source)
+    if not loc then
+        return
+    end
+
+    local tys
+
+    for _, c in ipairs(vm.compileNode(loc)) do
+        if c.cate == 'type' then
+            for _, set in ipairs(c:getSets(uri)) do
+                if set.type == 'doc.class' then
+                    for _, f in ipairs(set.fields) do
+                        if f.field[1] == fieldName then
+                            for _, t in ipairs(f.extends.types) do
+                                if t[1] == literal[1] then
+                                  tys = tys or {}
+                                  table.insert(tys, {set.class[1], #f.extends.types > 1})
+                                  break
+                                end
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return tys
+end
+
 local lookIntoChild = util.switch()
     : case 'getlocal'
     : case 'getglobal'
@@ -634,6 +672,31 @@ local lookIntoChild = util.switch()
                         topNode:removeNode(checkerNode)
                         if outNode then
                             outNode:narrow(tracer.uri, checkerName)
+                        end
+                    end
+                end
+            elseif handler.type == 'getfield'
+            and    handler.node.type == 'getlocal' then
+                local tys = getNodeTypesWithLiteralField(
+                    tracer.uri, handler.node, handler.field[1], checker)
+
+                -- TODO: handle more types
+                if tys and #tys == 1 then
+                    -- If the type is in a union (e.g. 'lit' | foo), then the type
+                    -- cannot be removed from the node.
+                    local ty, tyInUnion = tys[1][1], tys[1][2]
+                    topNode = topNode:copy()
+                    if action.op.type == '==' then
+                        topNode:narrow(tracer.uri, ty)
+                        if not tyInUnion and outNode then
+                            outNode:remove(ty)
+                        end
+                    else
+                        if not tyInUnion then
+                            topNode:remove(ty)
+                        end
+                        if outNode then
+                            outNode:narrow(tracer.uri, ty)
                         end
                     end
                 end
