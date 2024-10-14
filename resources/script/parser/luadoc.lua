@@ -891,22 +891,20 @@ function parseType(parent)
     result.finish = getFinish()
     result.firstFinish = result.finish
 
-    local row = guide.rowColOf(result.finish)
-
-    local function pushResume()
+    local function pushResume(result, row)
         local comments
         for i = 0, 100 do
             local nextComm = NextComment(i,'peek')
             if not nextComm then
-                return false
+                return false, row
             end
             local nextCommRow = guide.rowColOf(nextComm.start)
             local currentRow = row + i + 1
             if currentRow < nextCommRow then
-                return false
+                return false, row
             end
             if nextComm.text:match '^%-%s*%@' then
-                return false
+                return false, row
             else
                 local resumeHead = nextComm.text:match '^%-%s*%|'
                 if resumeHead then
@@ -925,7 +923,7 @@ function parseType(parent)
                         result.finish = resume.finish
                     end
                     comments = nil
-                    return true
+                    return true, row
                 else
                     if not comments then
                         comments = {}
@@ -934,12 +932,15 @@ function parseType(parent)
                 end
             end
         end
-        return false
+        return false, row
     end
 
     if not lockResume then
         lockResume = true
-        while pushResume() do end
+        local cont, row = false, guide.rowColOf(result.finish)
+        repeat
+            cont, row = pushResume(result, row)
+        until cont == false
         lockResume = false
     end
 
