@@ -743,7 +743,7 @@ local function getSourceTypeCache(ast)
                 cache[tp] = myCache
             end
             myCache[#myCache+1] = source
-        end)
+        end, cache)
     end
     return cache
 end
@@ -785,7 +785,10 @@ end
 --- 遍历所有的source
 ---@param ast parser.object
 ---@param callback fun(src: parser.object): boolean?
-function m.eachSource(ast, callback)
+---@param cbarg1? any
+---@param cbarg2? any
+---@param cbarg3? any
+function m.eachSource(ast, callback, cbarg1, cbarg2, cbarg3)
     local cache = ast._eachCache
     if not cache then
         cache = { ast }
@@ -805,7 +808,7 @@ function m.eachSource(ast, callback)
         end
     end
     for i = 1, #cache do
-        local res = callback(cache[i])
+        local res = callback(cache[i], cbarg1, cbarg2, cbarg3)
         if res == false then
             return
         end
