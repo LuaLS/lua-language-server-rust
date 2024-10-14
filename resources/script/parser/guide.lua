@@ -732,7 +732,7 @@ local function getSourceTypeCache(ast)
     if not cache then
         cache = {}
         ast._typeCache = cache
-        m.eachSource(ast, function (source)
+        m.eachSource(ast, function (source, cache)
             local tp = source.type
             if not tp then
                 return
