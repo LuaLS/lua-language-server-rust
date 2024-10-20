@@ -27,7 +27,7 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
         &lua,
         vec![
             "resources/?.lua;resources/?/init.lua;",
-            "resources/override_script/?.lua;resources/override_script/?/init.lua;",
+            // "resources/override_script/?.lua;resources/override_script/?/init.lua;",
             "resources/script/?.lua;resources/script/?/init.lua",
         ],
     )?;

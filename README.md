@@ -4,7 +4,7 @@ This is a Rust port of the Lua Language Server. Not all code is implemented in R
 
 # Runtime
 
-The current default runtime is LuaJIT, but JIT is not enabled. Performance is better with `jit.off()`.
+The current default runtime is 5.4
 
 # Build Support
 
@@ -13,14 +13,12 @@ The current default runtime is LuaJIT, but JIT is not enabled. Performance is be
 - [x] linux-aarch64  not format 
 - [x] linux-x64
 - [x] linux-musl
-- [x] linux-bsd  not format. need 'ld' but not find.
+- [x] linux-bsd  not format.
 - [x] darwin-x64
 - [x] darwin-arm64
 
 NOTE: 
 1. The linux-aarch64 and linux-bsd are not format, because there are some build problems.
-
-2. linux-bsd Unable to compile successfully under the virtual machine provided by cross, you can compile it yourself.
 
 # Build
 

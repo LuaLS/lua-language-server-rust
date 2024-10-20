@@ -5,13 +5,12 @@ fn main() {
     build_lpeglabel();
     cfg!(windows).then(|| build_setfilemode());
     cfg!(not(feature = "no_format")).then(|| build_emmyluacodestyle());
-    build_luajit_utf8();
 }
 
 fn build_lua_seri() {
     cc::Build::new()
         .include("3rd/lua-seri")
-        .include("3rd/LuaJIT/src")
+        .include("3rd/lua")
         .files(
             std::fs::read_dir("3rd/lua-seri")
                 .unwrap()
@@ -31,7 +30,7 @@ fn build_lua_seri() {
 fn build_lpeglabel() {
     cc::Build::new()
         .include("3rd/lpeglabel")
-        .include("3rd/LuaJIT/src")
+        .include("3rd/lua")
         .files(
             std::fs::read_dir("3rd/lpeglabel")
                 .unwrap()
@@ -75,8 +74,7 @@ fn build_emmyluacodestyle() {
         .include("3rd/EmmyLuaCodeStyle/CodeFormatCore/include")
         .include("3rd/EmmyLuaCodeStyle/LuaParser/include")
         .include("3rd/EmmyLuaCodeStyle/3rd/wildcards/include")
-        .include("3rd/LuaJIT/src");
-    builder.define("LUAJIT", "1");
+        .include("3rd/lua");
 
     let file_patterns = vec![
         "3rd/EmmyLuaCodeStyle/CodeFormatLib/src/*.cpp",
@@ -106,22 +104,3 @@ fn build_emmyluacodestyle() {
     builder.compile("EmmyLuaCodeStyle");
 }
 
-fn build_luajit_utf8() {
-    cc::Build::new()
-        .include("3rd/LuaJIT-utf8")
-        .include("3rd/LuaJIT/src")
-        .files(
-            std::fs::read_dir("3rd/LuaJIT-utf8")
-                .unwrap()
-                .filter_map(|entry| {
-                    let entry = entry.unwrap();
-                    let path = entry.path();
-                    if path.extension()?.to_str()? == "c" {
-                        Some(path)
-                    } else {
-                        None
-                    }
-                }),
-        )
-        .compile("luajit-utf8");
-}
