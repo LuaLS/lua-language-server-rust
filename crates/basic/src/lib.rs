@@ -3,7 +3,6 @@ mod codestyle;
 mod lpeglabel;
 mod lua_seri;
 mod override_lua;
-pub(crate) mod luajit_utf8;
 
 #[macro_use]
 extern crate lazy_static;
@@ -20,8 +19,6 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     lua_seri::register_lua_seri(&lua)?;
     // codestyle
     codestyle::register_code_format_module(lua)?;
-    // luajit_utf8
-    luajit_utf8::register_lua_utf8(lua)?;
 
     add_package_path(
         &lua,

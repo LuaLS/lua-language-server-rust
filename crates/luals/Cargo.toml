@@ -16,5 +16,5 @@ tokio.workspace = true
 luals-basic = { path = "../basic" , optional = true }
 
 [features]
-default = ["luals-basic""]
+default = ["luals-basic"]
 no_format = ["luals-basic/no_format"]
