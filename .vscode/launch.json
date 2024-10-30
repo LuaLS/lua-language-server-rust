@@ -12,7 +12,7 @@
                 "args": [
                     "build",
                     "--bin=lua-language-server",
-                    "--package=luals-rust"
+                    "--package=luals"
                 ],
                 "filter": {
                     "name": "lua-language-server",
