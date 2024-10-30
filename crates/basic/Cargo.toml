@@ -9,7 +9,8 @@ lazy_static.workspace = true
 encoding_rs.workspace = true
 tokio.workspace = true
 notify.workspace = true
-
+emmylua_parser.workspace = true
+rowan.workspace = true
 
 [build-dependencies]
 cc = "1.0"

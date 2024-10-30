@@ -3,6 +3,7 @@ mod codestyle;
 mod lpeglabel;
 mod lua_seri;
 mod override_lua;
+mod parser;
 
 #[macro_use]
 extern crate lazy_static;
@@ -20,11 +21,12 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     // codestyle
     codestyle::register_code_format_module(lua)?;
 
+    parser::register_parser_module(lua)?;
+
     add_package_path(
         &lua,
         vec![
             "resources/?.lua;resources/?/init.lua;",
-            // "resources/override_script/?.lua;resources/override_script/?/init.lua;",
             "resources/script/?.lua;resources/script/?/init.lua",
         ],
     )?;

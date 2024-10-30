@@ -2,7 +2,7 @@ local fs      = require 'bee.filesystem'
 local util    = require 'utility'
 local version = require 'version'
 require 'config.env'
-
+require 'test'
 local function getValue(value)
     if     value == 'true' or value == nil then
         value = true
