@@ -22,12 +22,19 @@ pub fn lua_preload(lua: &Lua) -> LuaResult<()> {
     codestyle::register_code_format_module(lua)?;
 
     parser::register_parser_module(lua)?;
-
+    // Get current environment path
+    let current_path = std::env::current_dir()?;
+    let base_require_path = current_path.join("?.lua");
+    let base_require_path_init = current_path.join("?/init.lua");
+    let require_path = current_path.join("script/?.lua");
+    let require_path_init = current_path.join("script/?/init.lua");
     add_package_path(
         &lua,
         vec![
-            "resources/?.lua;resources/?/init.lua;",
-            "resources/script/?.lua;resources/script/?/init.lua",
+            base_require_path.to_str().unwrap(),
+            base_require_path_init.to_str().unwrap(),
+            require_path.to_str().unwrap(),
+            require_path_init.to_str().unwrap(),
         ],
     )?;
 

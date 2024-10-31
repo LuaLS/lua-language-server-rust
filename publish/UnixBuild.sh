@@ -6,8 +6,6 @@ if [ -d "dist" ]; then
     rm -rf dist
 fi
 
-mkdir dist
+mkdir bin
 
-cp target/release/lua-language-server dist/
-
-cp -r resources dist/
+cp target/release/lua-language-server bin/

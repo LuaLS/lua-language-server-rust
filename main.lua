@@ -2,7 +2,7 @@ local fs      = require 'bee.filesystem'
 local util    = require 'utility'
 local version = require 'version'
 require 'config.env'
-require 'test'
+
 local function getValue(value)
     if     value == 'true' or value == nil then
         value = true
@@ -77,6 +77,10 @@ xpcall(dofile, log.debug, (ROOT / 'debugger.lua'):string())
 
 require 'cli'
 
+if TEST then
+    require 'test'
+    return
+end
 local _, service = xpcall(require, log.error, 'service')
 
 service.start()

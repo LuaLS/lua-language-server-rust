@@ -7,7 +7,7 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'luals-rust'",
+            "name": "Debug executable 'luals' rust part",
             "cargo": {
                 "args": [
                     "build",
@@ -25,23 +25,27 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'luals-rust'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=luals-rust",
-                    "--package=luals-rust"
+            "name": "🍄attach",
+            "type": "lua",
+            "request": "attach",
+            "stopOnEntry": false,
+            "address": "127.0.0.1:11428",
+            "outputCapture": [],
+            "sourceFormat": "string",
+            "sourceMaps": [
+                [
+                    "script/*",
+                    "${workspaceFolder}/script/*"
+                ]
+            ],
+            "windows": {
+                "sourceMaps": [
+                    [
+                        "script\\*",
+                        "${workspaceFolder}/script/*"
+                    ]
                 ],
-                "filter": {
-                    "name": "luals-rust",
-                    "kind": "bin"
-                }
             },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        }
+        },
     ]
 }

@@ -77,7 +77,7 @@ impl LuaUserData for LuaNodeWrapper {
             table.set("end", col)?;
             Ok(table)
         });
-        methods.add_method("getChildren", |lua, this, ()| {
+        methods.add_method("getChildren", |_, this, ()| {
             let children = match this {
                 LuaNodeWrapper::Node(node) => node
                     .children_with_tokens()

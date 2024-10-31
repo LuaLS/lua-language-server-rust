@@ -1,6 +1,6 @@
 cargo build --release -p luals
 
-$distPath = "dist"
+$distPath = "bin"
 
 if (Test-Path -Path $distPath) {
     Remove-Item -Path $distPath -Recurse -Force
@@ -9,5 +9,3 @@ if (Test-Path -Path $distPath) {
 New-Item -ItemType Directory -Path $distPath
 
 Copy-Item -Path "target/release/lua-language-server.exe" -Destination $distPath
-
-Copy-Item -Path "resources" -Destination $distPath -Recurse
