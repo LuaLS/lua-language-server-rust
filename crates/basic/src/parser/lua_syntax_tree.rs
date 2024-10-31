@@ -30,8 +30,6 @@ impl LuaSyntaxTree {
 }
 
 impl LuaUserData for LuaSyntaxTree {
-    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {}
-
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("getRoot", |_, this, ()| Ok(this.get_root()));
         // methods.add_method("get_chunk_node", |_, this, ()| Ok(this.get_chunk_node()));
