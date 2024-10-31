@@ -50,15 +50,15 @@ jobs:
       - name: package-uninx
         if: ${{ matrix.os != 'windows-latest'  }}
         run: |
+          python publish/workflow_copy_files.py . ${{ github.workspace }}/artifact
           mkdir -p ${{ github.workspace }}/artifact/bin
           cp ${{ github.workspace }}/target/${{ matrix.target }}/release/lua-language-server ${{ github.workspace }}/artifact/bin
-          python publish/workflow_copy_files.py . ${{ github.workspace }}/artifact
       - name: package-windows
         if: ${{ matrix.os == 'windows-latest'  }}
         run: |
-          New-Item -ItemType Directory -Path "${{ github.workspace }}/artifact/bin"
-          Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\bin
           python publish/workflow_copy_files.py . "${{ github.workspace }}/artifact"
+          New-Item -ItemType Directory -Path "${{ github.workspace }}/artifact/bin"
+          Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\bin 
         shell: pwsh
       - name: Upload
         uses: actions/upload-artifact@v3
