@@ -77,10 +77,6 @@ xpcall(dofile, log.debug, (ROOT / 'debugger.lua'):string())
 
 require 'cli'
 
-if TEST then
-    require 'test'
-    return
-end
 local _, service = xpcall(require, log.error, 'service')
 
 service.start()

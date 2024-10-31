@@ -19,9 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [
-               
-            ],
+            "args": [],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -46,6 +44,26 @@
                     ]
                 ],
             },
+        },
+        {
+            "name": "🍺test",
+            "type": "lua",
+            "request": "launch",
+            "stopOnEntry": false,
+            "luaexe": "${workspaceFolder}/bin/lua-language-server",
+            "program": "${workspaceFolder}/test.lua",
+            "luaVersion": "lua54",
+            "sourceCoding": "utf8",
+            "console": "integratedTerminal",
+            "address": "127.0.0.1:11428",
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": [
+                "print",
+                "stderr",
+            ],
+            "windows": {
+                "luaexe": "${workspaceFolder}/bin/lua-language-server.exe"
+            }
         },
     ]
 }
