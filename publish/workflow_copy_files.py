@@ -10,7 +10,6 @@ args = parser.parse_args()
 
 directories = ['locale', 'bin', 'meta', 'script']
 files = ['main.lua', "changelog.md", "LICENSE"]
-binary_files = ['target/release/lua-language-server.exe', 'bin/luajit.exe']
 
 if os.path.exists(args.target_dir):
     shutil.rmtree(args.target_dir)
