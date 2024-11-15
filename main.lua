@@ -1,6 +1,7 @@
 local fs      = require 'bee.filesystem'
 local util    = require 'utility'
 local version = require 'version'
+
 require 'config.env'
 
 local function getValue(value)
@@ -51,7 +52,6 @@ rootPath = (rootPath == '' and '.' or rootPath)
 ROOT     = fs.absolute(util.expandPath(rootPath))
 LOGPATH  = LOGPATH  and util.expandPath(LOGPATH)  or (ROOT:string() .. '/log')
 METAPATH = METAPATH and util.expandPath(METAPATH) or (ROOT:string() .. '/meta')
-
 
 ---@diagnostic disable-next-line: deprecated
 debug.setcstacklimit(200)

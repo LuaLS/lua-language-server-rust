@@ -630,15 +630,17 @@ local function matchCall(source)
         newNode.originNode = myNode
         vm.setNode(source, newNode, true)
         if call.args then
-            -- clear node caches of args to allow recomputation with the type narrowed call
+            -- clear existing node caches of args to allow recomputation with the type narrowed call
             for _, arg in ipairs(call.args) do
-                vm.setNode(arg, vm.createNode(), true)
+                if vm.getNode(arg) then
+                    vm.setNode(arg, vm.createNode(), true)
+                end
             end
             for n in newNode:eachObject() do
                 if n.type == 'function'
                 or n.type == 'doc.type.function' then
                     for i, arg in ipairs(call.args) do
-                        if n.args[i] then
+                        if vm.getNode(arg) and n.args[i] then
                             vm.setNode(arg, vm.compileNode(n.args[i]))
                         end
                     end
@@ -960,6 +962,26 @@ local function compileCallArgNode(arg, call, callNode, fixIndex, myIndex)
     local function dealDocFunc(n)
         local myEvent
         if n.args[eventIndex] then
+            if eventMap and myIndex > eventIndex then
+                -- if call param has literal types, then also check if function def param has literal types
+                -- 1. has no literal values => not enough info, thus allowed by default
+                -- 2. has literal values and >= 1 matches call param's literal types => allowed
+                -- 3. has literal values but none matches call param's literal types => filtered
+                local myEventMap = vm.getLiterals(n.args[eventIndex])
+                if myEventMap then
+                    local found = false
+                    for k in pairs(eventMap) do
+                        if myEventMap[k] then
+                            -- there is a matching literal
+                            found = true
+                            break
+                        end
+                    end
+                    if not found then
+                        return
+                    end
+                end
+            end
             local argNode = vm.compileNode(n.args[eventIndex])
             myEvent = argNode:get(1)
         end
@@ -1187,7 +1209,56 @@ local function compileFunctionParam(func, source)
             end
             ::continue::
         end
-        return found
+        if found then
+            return true
+        end
+        -- infer local callback function param type
+        --[[
+            ---@param callback fun(a: integer)
+            function register(callback) end
+
+            local function callback(a) end  --> a: integer
+            register(callback)
+        ]]
+        for _, ref in ipairs(refs) do
+            if ref.parent.type ~= 'callargs' then
+                goto continue
+            end
+            -- the parent function is a variable used as callback param, find the callback arg index first
+            local call = ref.parent.parent
+            local cbIndex
+            for i, arg in ipairs(call.args) do
+                if arg == ref then
+                    cbIndex = i
+                    break
+                end
+            end
+            ---@cast cbIndex integer
+
+            -- simulate a completion at `cbIndex` to infer this callback function type
+            ---@diagnostic disable-next-line: missing-fields
+            local node = vm.compileCallArg({ type = 'dummyarg', uri = guide.getUri(call) }, call, cbIndex)
+            if not node then
+                goto continue
+            end
+            for n in node:eachObject() do
+                -- check if the inferred function has arg at `aindex`
+                if n.type == 'doc.type.function' and n.args and n.args[aindex] then
+                    -- use type info on this `aindex` arg
+                    local argNode = vm.compileNode(n.args[aindex])
+                    for an in argNode:eachObject() do
+                        if an.type ~= 'doc.generic.name' then
+                            vm.setNode(source, an)
+                            found = true
+                        end
+                    end
+                end
+            end
+            ::continue::
+        end
+        if found then
+            return true
+        end
     end
 
     do

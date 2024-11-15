@@ -584,9 +584,13 @@ function vm.isSubType(uri, child, parent, mark, errs)
     local x = '' --> `string` set to `A`
     ]]
     if  guide.isBasicType(childName)
-    and guide.isLiteral(child)
-    and vm.isSubType(uri, parentName, childName, mark) then
-        return true
+    and not mark[childName] then
+        mark[childName] = true
+        if vm.isSubType(uri, parentName, childName, mark) then
+            mark[childName] = nil
+            return true
+        end
+        mark[childName] = nil
     end
 
     if errs then
@@ -615,6 +619,7 @@ end
 ---@return vm.node?
 function vm.getTableValue(uri, tnode, knode, inversion)
     local result = vm.createNode()
+    local inferSize = config.get(uri, "Lua.type.inferTableSize")
     for tn in tnode:eachObject() do
         if tn.type == 'doc.type.table' then
             for _, field in ipairs(tn.fields) do
@@ -657,7 +662,7 @@ function vm.getTableValue(uri, tnode, knode, inversion)
                 end
                 if  field.type == 'tableexp'
                 and field.value
-                and field.tindex == 1 then
+                and field.tindex <= inferSize then
                     if inversion then
                         if vm.isSubType(uri, 'integer', knode) then
                             result:merge(vm.compileNode(field.value))
@@ -721,7 +726,7 @@ function vm.getTableKey(uri, tnode, vnode, reverse)
                 if field.type == 'tablefield' then
                     result:merge(vm.declareGlobal('type', 'string'))
                 end
-                if field.type == 'tableexp' then
+                if field.type == 'tableexp' or field.type == 'varargs' then
                     result:merge(vm.declareGlobal('type', 'integer'))
                 end
             end

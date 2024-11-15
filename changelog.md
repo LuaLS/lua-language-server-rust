@@ -3,7 +3,59 @@
 ## Unreleased
 <!-- Add all new changes here. They will be moved under a version at release -->
 
+## 3.13.1
+`2024-11-13`
+* `FIX` Incorrect type check in some case
+
+## 3.13.0
+`2024-11-13`
+* `NEW` Setting: `Lua.type.inferTableSize`: A Small Table array can be infered
+* `NEW` Add custom repository support for addonManager. New configuration setting: `Lua.addonManager.repositoryBranch` and `Lua.addonManager.repositoryPath`
+* `NEW` Infer function parameter types when the function is used as an callback argument and that argument has a `fun()` annotation. Enable with `Lua.type.inferParamType` setting. [#2695](https://github.com/LuaLS/lua-language-server/pull/2695)
+  ```lua
+  ---@param callback fun(a: integer)
+  function register(callback) end
+
+  local function callback(a) end  --> a: integer
+  register(callback)
+  ```
+* `CHG` Basic types allow contravariance
+  ```lua
+  ---@class int32: integer
+
+  ---@type integer
+  local n
+
+  ---@type int32
+  local a = n
+  ```
+* `FIX` Improve type narrow with **literal alias type** during completion and signature help
+
+## 3.12.0
+`2024-10-30`
+* `NEW` Support importing `enum` through class name suffix matching in quick fixes, allowing the import of `enum` from `table.table.enum; return table`.
+* `NEW` Support limited multiline annotations
+  ```lua
+  ---@type {
+  --- x: number,
+  --- y: number,
+  --- z: number,
+  ---}
+  local point --> local point: { x: number, y: number, z: number }
+  ```
+* `FIX` A regression related to type narrow and generic param introduced since `v3.10.1`
+* `FIX` Parse storagePath to improve reliability of resolving ${addons} placeholder
+* `FIX` Reference should also look in tablefield
+* `FIX` Determine that the index of `{...}` is an integer when iterating
+
+## 3.11.1
+`2024-10-9`
+* `FIX` Fixed an issue preventing to set the locale to Japanese
+* `FIX` Preserve newlines between function comment and @see
+* `FIX` Accept storagePath option from client to resolve addon directory not found
+
 ## 3.11.0
+`2024-9-30`
 * `NEW` Added support for Japanese locale
 * `NEW` Infer function parameter types when overriding the same-named class function in an instance of that class [#2158](https://github.com/LuaLS/lua-language-server/issues/2158)
 * `NEW` Types with literal fields can be narrowed.
