@@ -53,7 +53,7 @@ jobs:
         run: |
           rustup target add ${{ matrix.target }}
           cargo install --locked cargo-zigbuild
-          cross zigbuild --release --target ${{ matrix.target }}-gun.${{ matrix.glibc }} -p luals
+          cargo zigbuild --release --target ${{ matrix.target }}.${{ matrix.glibc }} -p luals
       - name: package-uninx
         if: ${{ matrix.os != 'windows-latest'  }}
         run: |
@@ -68,9 +68,16 @@ jobs:
           Copy-Item -Path ${{ github.workspace }}\target\${{ matrix.target }}\release\lua-language-server.exe -Destination ${{ github.workspace }}\artifact\bin 
         shell: pwsh
       - name: Upload
+        if: ${{ matrix.cross != 'zigbuild'  }}
         uses: actions/upload-artifact@v3
         with: 
           name: lua-language-server-${{ matrix.platform }}
+          path: ${{ github.workspace }}/artifact/
+      - name: Upload zigbuild
+        if: ${{ matrix.cross == 'zigbuild'  }}
+        uses: actions/upload-artifact@v3
+        with: 
+          name: lua-language-server-${{ matrix.platform }}.${{ matrix.glibc }}
           path: ${{ github.workspace }}/artifact/
   release:
     needs: build
