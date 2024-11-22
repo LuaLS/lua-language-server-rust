@@ -53,6 +53,7 @@ jobs:
         run: |
           rustup target add ${{ matrix.target }}
           cargo install --locked cargo-zigbuild
+          pip3 install ziglang
           cargo zigbuild --release --target ${{ matrix.target }}.${{ matrix.glibc }} -p luals
       - name: package-uninx
         if: ${{ matrix.os != 'windows-latest'  }}
