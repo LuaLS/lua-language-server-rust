@@ -84,15 +84,15 @@ jobs:
           path: lua-language-server-win32-ia32
       - name: tar unix
         run: |
-          chmod +x lua-language-server-linux-x64/lua-language-server
+          chmod +x lua-language-server-linux-x64/bin/lua-language-server
           tar -czf lua-language-server-linux-x64.tar.gz -C lua-language-server-linux-x64 .
-          chmod +x lua-language-server-linux-arm64/lua-language-server
+          chmod +x lua-language-server-linux-arm64/bin/lua-language-server
           tar -czf lua-language-server-linux-aarch64.tar.gz  -C lua-language-server-linux-arm64 .
-          chmod +x lua-language-server-linux-musl/lua-language-server
+          chmod +x lua-language-server-linux-musl/bin/lua-language-server
           tar -czf lua-language-server-linux-musl.tar.gz  -C lua-language-server-linux-musl .
-          chmod +x lua-language-server-darwin-x64/lua-language-server
+          chmod +x lua-language-server-darwin-x64/bin/lua-language-server
           tar -czf lua-language-server-darwin-x64.tar.gz  -C lua-language-server-darwin-x64 .
-          chmod +x lua-language-server-darwin-arm64/lua-language-server
+          chmod +x lua-language-server-darwin-arm64/bin/lua-language-server
           tar -czf lua-language-server-darwin-arm64.tar.gz  -C lua-language-server-darwin-arm64 .
       - name: Release
         uses: softprops/action-gh-release@v2
