@@ -1,5 +1,6 @@
 use emmylua_parser::{LuaSyntaxKind, LuaSyntaxNode, LuaSyntaxToken, LuaTokenKind};
 use mlua::prelude::*;
+use rowan::NodeOrToken;
 
 pub enum LuaNodeWrapper {
     Node(LuaSyntaxNode),
@@ -82,8 +83,8 @@ impl LuaUserData for LuaNodeWrapper {
                 LuaNodeWrapper::Node(node) => node
                     .children_with_tokens()
                     .filter_map(|it| match it {
-                        rowan::NodeOrToken::Node(node) => Some(LuaNodeWrapper::Node(node)),
-                        rowan::NodeOrToken::Token(token) => Some(LuaNodeWrapper::Token(token)),
+                        NodeOrToken::Node(node) => Some(LuaNodeWrapper::Node(node)),
+                        NodeOrToken::Token(token) => Some(LuaNodeWrapper::Token(token)),
                     })
                     .collect(),
                 LuaNodeWrapper::Token(_) => vec![],

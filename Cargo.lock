@@ -110,9 +110,9 @@ checksum = "60b1af1c220855b6ceac025d3f6ecdd2b7c4894bfe9cd9bda4fbb4bc7c0d4cf0"
 
 [[package]]
 name = "emmylua_parser"
-version = "0.3.3"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "349c1d30c8de98867496e5b600d1f710656047830a8f1d5aae38e4ac7ee2a252"
+checksum = "ae294ec89bcca503fd0b63bf0801c71a101788295f08fc63b9a11bc23ac88f70"
 dependencies = [
  "rowan",
 ]
@@ -517,9 +517,9 @@ dependencies = [
 
 [[package]]
 name = "rowan"
-version = "0.15.16"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a542b0253fa46e632d27a1dc5cf7b930de4df8659dc6e720b647fc72147ae3d"
+checksum = "028acc0aeb6c46a4e4390928ef6ec0f4b7e9432f37bd4129a976e77f86f93322"
 dependencies = [
  "countme",
  "hashbrown",

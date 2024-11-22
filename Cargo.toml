@@ -10,5 +10,5 @@ lazy_static = "1.4.0"
 encoding_rs = "0.8"
 tokio = { version = "1.40.0", features = ["full"] }
 notify = { version = "6.1.1", features = ["serde"] }
-emmylua_parser = "0.3"
-rowan = { version = "0.15.16" }
+emmylua_parser = "0.5"
+rowan = { version = "0.16" }
