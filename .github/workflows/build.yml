@@ -19,6 +19,7 @@ jobs:
           - { os: ubuntu-20.04,   target: x86_64-unknown-linux-gnu,   platform: linux-x64,    cross: general }
           - { os: ubuntu-22.04,   target: x86_64-unknown-linux-gnu,   platform: linux-x64,    cross: zigbuild, glibc: 2.17 }
           - { os: ubuntu-22.04,   target: aarch64-unknown-linux-gnu,  platform: linux-arm64,  cross: no_format }
+          - { os: ubuntu-22.04,   target: aarch64-unknown-linux-gnu,  platform: linux-arm64,  cross: zigbuild, glibc: 2.17 }
           - { os: ubuntu-20.04,   target: x86_64-unknown-linux-musl,  platform: linux-musl,   cross: cross }
           - { os: ubuntu-22.04,   target: x86_64-unknown-freebsd,     platform: linux-bsd,    cross: no_format }
           - { os: macos-latest,   target: x86_64-apple-darwin,        platform: darwin-x64,   cross: general }
@@ -78,7 +79,7 @@ jobs:
         if: ${{ matrix.cross == 'zigbuild'  }}
         uses: actions/upload-artifact@v3
         with: 
-          name: lua-language-server-${{ matrix.platform }}.${{ matrix.glibc }}
+          name: lua-language-server-${{ matrix.platform }}-glibc.${{ matrix.glibc }}
           path: ${{ github.workspace }}/artifact/
   release:
     needs: build
