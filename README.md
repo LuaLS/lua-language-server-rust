@@ -10,7 +10,8 @@ The current default runtime is 5.4
 
 - [x] win32-x64
 - [x] win32-ia32
-- [x] linux-aarch64  not format 
+- [x] win32-arm64
+- [x] linux-aarch64
 - [x] linux-x64
 - [x] linux-musl
 - [x] linux-bsd  not format.
@@ -18,7 +19,7 @@ The current default runtime is 5.4
 - [x] darwin-arm64
 
 NOTE: 
-1. The linux-aarch64 and linux-bsd are not format, because there are some build problems.
+1. The linux-bsd are not format, because there are some build problems.
 
 # Build
 
