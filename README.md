@@ -15,6 +15,7 @@ The current default runtime is 5.4
 - [x] linux-x64
 - [x] linux-musl
 - [x] linux-bsd  not format.
+- [x] linux-riscv64
 - [x] darwin-x64
 - [x] darwin-arm64
 
