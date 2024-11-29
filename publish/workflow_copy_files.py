@@ -9,7 +9,7 @@ parser.add_argument('target_dir', help='Target directory path')
 args = parser.parse_args()
 
 directories = ['locale', 'bin', 'meta', 'script']
-files = ['main.lua', "changelog.md", "LICENSE"]
+files = ['main.lua', "changelog.md", "LICENSE", "debugger.lua"]
 
 if os.path.exists(args.target_dir):
     shutil.rmtree(args.target_dir)
